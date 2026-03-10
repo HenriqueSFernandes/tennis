@@ -1,0 +1,25 @@
+services:
+  api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD}
+      PORT: "3000"
+      DATA_DIR: /data
+    volumes:
+      - api-data:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.riotinto.henriquesf.me}
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+
+volumes:
+  api-data:
