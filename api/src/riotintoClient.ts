@@ -431,8 +431,8 @@ export async function getCurrentBooking(
   const date = (y && m && d) ? `${d}-${m}-${y}` : '';
 
   // Resolve turnoreserva+ordemreserva indices → time string
-  // The website returns these as 1-based indices; buildDaySlots uses 0-based.
-  const turnoIdx = parseInt(raw.turnoreserva, 10) - 1;
+  // turnoreserva is 0-based; ordemreserva is 1-based from the website API.
+  const turnoIdx = parseInt(raw.turnoreserva, 10);
   const horaIdx = parseInt(raw.ordemreserva, 10) - 1;
   let time = '';
   for (const dayKey of DAY_KEYS) {
