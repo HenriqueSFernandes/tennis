@@ -38,14 +38,9 @@ export interface CurrentBookingInfo {
   displayName: string;
   courtId: number;
   booking: {
-    user: string;
-    username: string;
-    obs: string;
     nome: string;
-    telefone: string;
-    data?: string;
-    turno?: string;
-    hora?: string;
+    date: string; // "DD-MM-YYYY"
+    time: string; // "HH:MM"
   };
 }
 

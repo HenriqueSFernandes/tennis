@@ -143,10 +143,9 @@ export function Dashboard() {
                     <p className="text-white font-medium">
                       Court {b.courtId} — {b.booking.nome || b.displayName}
                     </p>
-                    {b.booking.data && (
+                    {b.booking.date && (
                       <p className="text-emerald-400 text-sm">
-                        {b.booking.data}
-                        {b.booking.hora ? ` às ${b.booking.hora}h` : ''}
+                        {b.booking.date}{b.booking.time ? ` às ${b.booking.time}` : ''}
                       </p>
                     )}
                     <p className="text-slate-400 text-xs mt-0.5">

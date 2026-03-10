@@ -180,13 +180,12 @@ interface DadosLocalResponse {
   };
   reserva_actual: null | {
     user: string;
-    username: string;
     obs: string;
     nome: string;
     telefone: string;
-    data?: string;
-    turno?: string;
-    hora?: string;
+    datareserva: string;   // "YYYY-MM-DD"
+    turnoreserva: string;  // turno index
+    ordemreserva: string;  // hora index within turno
   };
 }
 
@@ -276,7 +275,7 @@ export async function getCourtSchedule(
     reservasRaw.reservas.forEach((day, idx) => {
       dateMap.set(idx, day.data);
       for (const r of day.reservas) {
-        const key = `${idx}-${r.turnoreserva}-${r.ordemreserva}`;
+        const key = `${idx}-${r.turnoreserva}-${parseInt(r.ordemreserva, 10) - 1}`;
         bookedMap.set(key, { user: r.user, username: r.username, nome: r.nome });
       }
     });
@@ -349,7 +348,7 @@ export async function makeBooking(
       semana: semana.toString(),
       dia: dayIndex.toString(),
       turno: turno.toString(),
-      hora: hora.toString(),
+      hora: (hora + 1).toString(), // site uses 1-indexed ordemreserva
       nome: displayName,
       telefone: phone,
       obs: '',
@@ -389,7 +388,7 @@ export async function cancelBooking(
       semana: semana.toString(),
       dia: dayIndex.toString(),
       turno: turno.toString(),
-      hora: hora.toString(),
+      hora: (hora + 1).toString(), // site uses 1-indexed ordemreserva
       nome: displayName,
       telefone: phone,
       obs: '',
@@ -404,13 +403,19 @@ export async function cancelBooking(
   return raw;
 }
 
+export interface ResolvedBooking {
+  nome: string;
+  date: string; // "DD-MM-YYYY"
+  time: string; // "HH:MM"
+}
+
 export async function getCurrentBooking(
   db: Db,
   accountId: string,
   username: string,
   password: string,
   courtId: number,
-): Promise<DadosLocalResponse['reserva_actual']> {
+): Promise<ResolvedBooking | null> {
   const session = await getSession(db, accountId, username, password);
 
   const dados = (await jsonpPost(
@@ -419,5 +424,32 @@ export async function getCurrentBooking(
     { idlocal: courtId.toString(), source: 'sitefe' },
   )) as DadosLocalResponse;
 
-  return dados.reserva_actual;
+  const raw = dados.reserva_actual;
+  if (!raw) return null;
+
+  // Convert datareserva "YYYY-MM-DD" → "DD-MM-YYYY"
+  const [y, m, d] = raw.datareserva.split('-');
+  const date = (y && m && d) ? `${d}-${m}-${y}` : '';
+
+  // Resolve turnoreserva+ordemreserva indices → time string
+  const turnoIdx = parseInt(raw.turnoreserva, 10);
+  const horaIdx = parseInt(raw.ordemreserva, 10) - 1; // ordemreserva is 1-indexed
+  let time = '';
+  for (const dayKey of DAY_KEYS) {
+    const rawDay = dados.local[dayKey];
+    if (!rawDay) continue;
+    const daySchedule = parseDaySchedule(rawDay);
+    const slots = buildDaySlots(daySchedule, 0, '');
+    const match = slots.find((s) => s.turno === turnoIdx && s.hora === horaIdx);
+    if (match) {
+      time = match.time;
+      break;
+    }
+  }
+
+  return {
+    nome: raw.nome,
+    date,
+    time,
+  };
 }
