@@ -89,6 +89,7 @@ export function Dashboard() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-white text-sm font-medium truncate">{acc.displayName}</p>
+                    <p className="text-slate-500 text-xs truncate">{acc.username}</p>
                     <p className={`text-xs ${hasBooking ? 'text-emerald-400' : 'text-slate-500'}`}>
                       {hasBooking ? 'Tem reserva' : 'Sem reserva'}
                     </p>
@@ -149,7 +150,8 @@ export function Dashboard() {
                       </p>
                     )}
                     <p className="text-slate-400 text-xs mt-0.5">
-                      Conta: {acc?.displayName ?? b.username}
+                      {acc?.displayName ?? b.displayName}
+                      <span className="text-slate-500"> · {b.username}</span>
                     </p>
                   </div>
                 </div>
