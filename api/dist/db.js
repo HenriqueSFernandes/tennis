@@ -12,6 +12,7 @@ exports.getDecryptedPassword = getDecryptedPassword;
 exports.getCachedSession = getCachedSession;
 exports.saveSession = saveSession;
 exports.clearSession = clearSession;
+exports.getSiteUserId = getSiteUserId;
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = __importDefault(require("node:fs"));
@@ -128,4 +129,11 @@ function saveSession(db, accountId, session) {
 }
 function clearSession(db, accountId) {
     db.prepare('DELETE FROM sessions WHERE account_id = ?').run(accountId);
+}
+// Returns the site's numeric user ID for an account from its cached session, or null if no session.
+function getSiteUserId(db, accountId) {
+    const row = db
+        .prepare('SELECT user_id FROM sessions WHERE account_id = ?')
+        .get(accountId);
+    return row?.user_id ?? null;
 }

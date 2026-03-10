@@ -176,3 +176,11 @@ export function saveSession(db: Db, accountId: string, session: CachedSession): 
 export function clearSession(db: Db, accountId: string): void {
   db.prepare('DELETE FROM sessions WHERE account_id = ?').run(accountId);
 }
+
+// Returns the site's numeric user ID for an account from its cached session, or null if no session.
+export function getSiteUserId(db: Db, accountId: string): string | null {
+  const row = db
+    .prepare('SELECT user_id FROM sessions WHERE account_id = ?')
+    .get(accountId) as { user_id: string } | undefined;
+  return row?.user_id ?? null;
+}

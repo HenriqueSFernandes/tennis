@@ -158,20 +158,19 @@ function buildDaySlots(daySchedule, _dayIndex, _date) {
     return slots;
 }
 // ── Public API ────────────────────────────────────────────────────────────────
-async function getCourtSchedule(db, accountId, username, password, courtId, weekOffset, ourAccountIds) {
+async function getCourtSchedule(db, accountId, username, password, courtId, weekOffset, ourUsers) {
     const session = await getSession(db, accountId, username, password);
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + weekOffset * 7);
     const isoDate = targetDate.toISOString().slice(0, 10);
     const dadosRaw = (await jsonpPost('/index.php?option=com_agenda&task=ajax.getDadosLocal&format=json', session, { idlocal: courtId.toString(), source: 'sitefe' }));
     const reservasRaw = (await jsonpPost('/index.php?option=com_agenda&task=ajax.getReservasLocal&format=json', session, { idlocal: courtId.toString(), day: isoDate }));
+    // bookedMap key: "YYYY-MM-DD-turno-hora" (keyed by date, not array index)
     const bookedMap = new Map();
-    const dateMap = new Map();
     if (reservasRaw !== false && reservasRaw.reservas) {
-        reservasRaw.reservas.forEach((day, idx) => {
-            dateMap.set(idx, day.data);
+        reservasRaw.reservas.forEach((day) => {
             for (const r of day.reservas) {
-                const key = `${idx}-${r.turnoreserva}-${parseInt(r.ordemreserva, 10) - 1}`;
+                const key = `${day.data}-${r.turnoreserva}-${r.ordemreserva}`;
                 bookedMap.set(key, { user: r.user, username: r.username, nome: r.nome });
             }
         });
@@ -186,10 +185,6 @@ async function getCourtSchedule(db, accountId, username, password, courtId, week
         const mm = (d.getMonth() + 1).toString().padStart(2, '0');
         weekDates.push(`${dd}-${mm}-${d.getFullYear()}`);
     }
-    for (const [idx, date] of dateMap.entries()) {
-        if (idx >= 0 && idx < 7)
-            weekDates[idx] = date;
-    }
     const slots = [];
     DAY_KEYS.forEach((dayKey, dayIndex) => {
         const rawDay = dadosRaw.local[dayKey];
@@ -197,19 +192,23 @@ async function getCourtSchedule(db, accountId, username, password, courtId, week
             return;
         const daySchedule = parseDaySchedule(rawDay);
         const daySlots = buildDaySlots(daySchedule, dayIndex, weekDates[dayIndex] ?? '');
+        // weekDates[dayIndex] is "DD-MM-YYYY"; convert to "YYYY-MM-DD" for bookedMap lookup
+        const slotDate = weekDates[dayIndex] ?? '';
+        const [dd, mm, yyyy] = slotDate.split('-');
+        const isoDate = (dd && mm && yyyy) ? `${yyyy}-${mm}-${dd}` : '';
         for (const s of daySlots) {
-            const key = `${dayIndex}-${s.turno}-${s.hora}`;
+            const key = `${isoDate}-${s.turno}-${s.hora}`;
             const booking = bookedMap.get(key) ?? null;
             slots.push({
                 time: s.time,
                 turno: s.turno,
                 hora: s.hora,
-                date: weekDates[dayIndex] ?? '',
+                date: slotDate,
                 dayIndex,
                 bookedBy: booking?.username ?? null,
                 bookedByName: booking?.nome ?? null,
-                isOurs: booking !== null && ourAccountIds.includes(booking.user),
-                ourAccountId: booking !== null && ourAccountIds.includes(booking.user) ? booking.user : null,
+                isOurs: booking !== null && ourUsers.has(booking.user),
+                ourAccountId: booking !== null ? (ourUsers.get(booking.user) ?? null) : null,
             });
         }
     });
@@ -223,7 +222,7 @@ async function makeBooking(db, accountId, username, password, displayName, phone
         semana: semana.toString(),
         dia: dayIndex.toString(),
         turno: turno.toString(),
-        hora: (hora + 1).toString(), // site uses 1-indexed ordemreserva
+        hora: hora.toString(),
         nome: displayName,
         telefone: phone,
         obs: '',
@@ -242,7 +241,7 @@ async function cancelBooking(db, accountId, username, password, displayName, pho
         semana: semana.toString(),
         dia: dayIndex.toString(),
         turno: turno.toString(),
-        hora: (hora + 1).toString(), // site uses 1-indexed ordemreserva
+        hora: hora.toString(),
         nome: displayName,
         telefone: phone,
         obs: '',
@@ -264,7 +263,7 @@ async function getCurrentBooking(db, accountId, username, password, courtId) {
     const date = (y && m && d) ? `${d}-${m}-${y}` : '';
     // Resolve turnoreserva+ordemreserva indices → time string
     const turnoIdx = parseInt(raw.turnoreserva, 10);
-    const horaIdx = parseInt(raw.ordemreserva, 10) - 1; // ordemreserva is 1-indexed
+    const horaIdx = parseInt(raw.ordemreserva, 10);
     let time = '';
     for (const dayKey of DAY_KEYS) {
         const rawDay = dados.local[dayKey];

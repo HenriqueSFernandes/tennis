@@ -40,11 +40,11 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
   function slotClass(slot: ScheduleSlot | undefined, dayIndex: number): string {
     const past = isPastDate(schedule.weekDates[dayIndex] ?? '');
     const base = 'rounded-lg px-1 py-1.5 text-xs text-center transition cursor-pointer select-none';
-    if (!slot) return `${base} bg-slate-700/30 text-slate-600`;
+    if (!slot) return `${base} bg-transparent cursor-default`;
     if (past) return `${base} bg-slate-700/40 text-slate-500 cursor-default`;
-    if (slot.isOurs) return `${base} bg-emerald-700 hover:bg-emerald-600 text-white font-medium`;
-    if (slot.bookedBy) return `${base} bg-slate-600/60 text-slate-400 cursor-default`;
-    return `${base} bg-slate-700 hover:bg-slate-600 text-slate-200`;
+    if (slot.isOurs) return `${base} bg-emerald-600 hover:bg-emerald-500 text-white font-medium`;
+    if (slot.bookedBy) return `${base} bg-rose-900/60 text-rose-300 cursor-default`;
+    return `${base} bg-slate-600 hover:bg-slate-500 text-slate-200 cursor-pointer`;
   }
 
   return (
@@ -106,8 +106,8 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
                           <span className="block truncate">
                             {getAccountName(slot.ourAccountId!).split(' ')[0]}
                           </span>
-                        ) : slot?.bookedBy ? (
-                          <span className="block truncate text-slate-500">•</span>
+        ) : slot?.bookedBy ? (
+          <span className="block truncate text-rose-300">•</span>
                         ) : slot ? (
                           <span className="block text-slate-500">—</span>
                         ) : (
@@ -126,13 +126,13 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
       {/* Legend */}
       <div className="px-4 py-3 border-t border-slate-700 flex gap-4 text-xs text-slate-400">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-emerald-700 inline-block" /> A sua reserva
+          <span className="w-3 h-3 rounded bg-emerald-600 inline-block" /> A sua reserva
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-slate-600 inline-block" /> Ocupado
+          <span className="w-3 h-3 rounded bg-rose-900/60 inline-block" /> Ocupado
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-slate-700 inline-block" /> Livre
+          <span className="w-3 h-3 rounded bg-slate-600 inline-block" /> Livre
         </span>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import 'dotenv/config';
 import type { AddAccountRequest, BookRequest, CancelRequest } from './types.js';
-import { openDb, listAccounts, addAccount, deleteAccount, getStoredAccount, getDecryptedPassword } from './db.js';
+import { openDb, listAccounts, addAccount, deleteAccount, getStoredAccount, getDecryptedPassword, getSiteUserId } from './db.js';
 import { getCourtSchedule, makeBooking, cancelBooking, getCurrentBooking } from './riotintoClient.js';
 
 const db = openDb();
@@ -132,11 +132,16 @@ app.get('/api/schedule', async (c) => {
   const pwd = await getDecryptedPassword(db, firstAcc.id, appPassword);
   if (!pwd) return c.json({ error: 'Could not decrypt credentials' }, 500);
 
-  const ourAccountIds = accounts.map((a) => a.id);
+  // Build siteUserId → SQLite accountId map from cached sessions
+  const ourUsers = new Map<string, string>();
+  for (const acc of accounts) {
+    const siteUserId = getSiteUserId(db, acc.id);
+    if (siteUserId && siteUserId !== '0') ourUsers.set(siteUserId, acc.id);
+  }
 
   const [court1, court2] = await Promise.all([
-    getCourtSchedule(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourAccountIds),
-    getCourtSchedule(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourAccountIds),
+    getCourtSchedule(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
+    getCourtSchedule(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
   ]);
 
   return c.json({ courts: [court1, court2], weekOffset });

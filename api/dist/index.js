@@ -116,10 +116,16 @@ app.get('/api/schedule', async (c) => {
     const pwd = await (0, db_js_1.getDecryptedPassword)(db, firstAcc.id, appPassword);
     if (!pwd)
         return c.json({ error: 'Could not decrypt credentials' }, 500);
-    const ourAccountIds = accounts.map((a) => a.id);
+    // Build siteUserId → SQLite accountId map from cached sessions
+    const ourUsers = new Map();
+    for (const acc of accounts) {
+        const siteUserId = (0, db_js_1.getSiteUserId)(db, acc.id);
+        if (siteUserId && siteUserId !== '0')
+            ourUsers.set(siteUserId, acc.id);
+    }
     const [court1, court2] = await Promise.all([
-        (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourAccountIds),
-        (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourAccountIds),
+        (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
+        (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
     ]);
     return c.json({ courts: [court1, court2], weekOffset });
 });
