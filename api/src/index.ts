@@ -12,8 +12,7 @@ const app = new Hono();
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-  'https://riotinto.henriquesf.me',
-  'https://rio-tinto-frontend.pages.dev',
+  'https://tennis.henriquesf.me',
 ];
 
 app.use(
