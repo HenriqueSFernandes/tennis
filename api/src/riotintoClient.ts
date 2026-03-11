@@ -322,6 +322,12 @@ export async function getCourtSchedule(
   return { courtId, courtName: dadosRaw.local.nome, weekDates, slots };
 }
 
+// Convert "DD-MM-YYYY" → "YYYY-MM-DD" for the changeReserva data parameter
+function toIsoDate(ddmmyyyy: string): string {
+  const [dd, mm, yyyy] = ddmmyyyy.split('-');
+  return (dd && mm && yyyy) ? `${yyyy}-${mm}-${dd}` : ddmmyyyy;
+}
+
 export async function makeBooking(
   db: Db,
   accountId: string,
@@ -343,7 +349,7 @@ export async function makeBooking(
     session,
     {
       idlocal: courtId.toString(),
-      data: date,
+      data: toIsoDate(date),
       semana: semana.toString(),
       dia: dayIndex.toString(),
       turno: turno.toString(),
@@ -383,7 +389,7 @@ export async function cancelBooking(
     session,
     {
       idlocal: courtId.toString(),
-      data: date,
+      data: toIsoDate(date),
       semana: semana.toString(),
       dia: dayIndex.toString(),
       turno: turno.toString(),

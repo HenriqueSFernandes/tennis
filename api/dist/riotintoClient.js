@@ -214,11 +214,16 @@ async function getCourtSchedule(db, accountId, username, password, courtId, week
     });
     return { courtId, courtName: dadosRaw.local.nome, weekDates, slots };
 }
+// Convert "DD-MM-YYYY" → "YYYY-MM-DD" for the changeReserva data parameter
+function toIsoDate(ddmmyyyy) {
+    const [dd, mm, yyyy] = ddmmyyyy.split('-');
+    return (dd && mm && yyyy) ? `${yyyy}-${mm}-${dd}` : ddmmyyyy;
+}
 async function makeBooking(db, accountId, username, password, displayName, phone, courtId, date, dayIndex, turno, hora, semana) {
     const session = await getSession(db, accountId, username, password);
     const raw = (await jsonpPost('/index.php?option=com_agenda&task=ajax.changeReserva&format=json', session, {
         idlocal: courtId.toString(),
-        data: date,
+        data: toIsoDate(date),
         semana: semana.toString(),
         dia: dayIndex.toString(),
         turno: turno.toString(),
@@ -237,7 +242,7 @@ async function cancelBooking(db, accountId, username, password, displayName, pho
     const session = await getSession(db, accountId, username, password);
     const raw = (await jsonpPost('/index.php?option=com_agenda&task=ajax.changeReserva&format=json', session, {
         idlocal: courtId.toString(),
-        data: date,
+        data: toIsoDate(date),
         semana: semana.toString(),
         dia: dayIndex.toString(),
         turno: turno.toString(),
@@ -262,8 +267,9 @@ async function getCurrentBooking(db, accountId, username, password, courtId) {
     const [y, m, d] = raw.datareserva.split('-');
     const date = (y && m && d) ? `${d}-${m}-${y}` : '';
     // Resolve turnoreserva+ordemreserva indices → time string
+    // turnoreserva is 0-based; ordemreserva is 1-based from the website API.
     const turnoIdx = parseInt(raw.turnoreserva, 10);
-    const horaIdx = parseInt(raw.ordemreserva, 10);
+    const horaIdx = parseInt(raw.ordemreserva, 10) - 1;
     let time = '';
     for (const dayKey of DAY_KEYS) {
         const rawDay = dados.local[dayKey];

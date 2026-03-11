@@ -10,8 +10,7 @@ const db = (0, db_js_1.openDb)();
 const app = new hono_1.Hono();
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-    'https://riotinto.henriquesf.me',
-    'https://rio-tinto-frontend.pages.dev',
+    'https://tennis.henriquesf.me',
 ];
 app.use('*', (0, cors_1.cors)({
     origin: (origin) => {
