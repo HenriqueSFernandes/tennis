@@ -19,7 +19,13 @@ export function Dashboard() {
     setError('');
     try {
       const [b, a] = await Promise.all([getBookings(password), getAccounts(password)]);
-      setBookings(b);
+      const sorted = [...b].sort((x, y) => {
+        const dateA = x.booking.date.split('-').reverse().join('');
+        const dateB = y.booking.date.split('-').reverse().join('');
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return (x.booking.time ?? '').localeCompare(y.booking.time ?? '');
+      });
+      setBookings(sorted);
       setAccounts(a);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar dados');
