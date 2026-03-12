@@ -4,7 +4,7 @@ import { cors } from 'hono/cors';
 import 'dotenv/config';
 import type { AddAccountRequest, BookRequest, CancelRequest } from './types.js';
 import { openDb, listAccounts, addAccount, deleteAccount, getStoredAccount, getDecryptedPassword, getSiteUserId } from './db.js';
-import { getCourtSchedule, makeBooking, cancelBooking, getCurrentBooking } from './riotintoClient.js';
+import { getCourtSchedule, makeBooking, cancelBooking, getCurrentBooking, getSession } from './riotintoClient.js';
 
 const db = openDb();
 
@@ -131,19 +131,34 @@ app.get('/api/schedule', async (c) => {
   const pwd = await getDecryptedPassword(db, firstAcc.id, appPassword);
   if (!pwd) return c.json({ error: 'Could not decrypt credentials' }, 500);
 
-  // Build siteUserId → SQLite accountId map from cached sessions
+  // Warm sessions for ALL accounts so their user_ids are saved to the DB,
+  // ensuring ourUsers is correctly populated even on a cold start.
+  await Promise.allSettled(
+    accounts.map(async (acc) => {
+      const s = getStoredAccount(db, acc.id);
+      const p = s ? await getDecryptedPassword(db, acc.id, appPassword) : null;
+      if (s && p) await getSession(db, acc.id, s.username, p);
+    }),
+  );
+
+  // Build siteUserId → SQLite accountId map from the now-populated sessions
   const ourUsers = new Map<string, string>();
   for (const acc of accounts) {
     const siteUserId = getSiteUserId(db, acc.id);
     if (siteUserId && siteUserId !== '0') ourUsers.set(siteUserId, acc.id);
   }
 
-  const [court1, court2] = await Promise.all([
-    getCourtSchedule(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
-    getCourtSchedule(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
-  ]);
-
-  return c.json({ courts: [court1, court2], weekOffset });
+  // Fetch schedules — return empty courts on error instead of crashing with 500
+  try {
+    const [court1, court2] = await Promise.all([
+      getCourtSchedule(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
+      getCourtSchedule(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
+    ]);
+    return c.json({ courts: [court1, court2], weekOffset });
+  } catch (e) {
+    console.error('[schedule] fetch failed:', e);
+    return c.json({ courts: [], weekOffset });
+  }
 });
 
 // ── POST /api/book ────────────────────────────────────────────────────────────
