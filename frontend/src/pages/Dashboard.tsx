@@ -19,12 +19,20 @@ export function Dashboard() {
     setError('');
     try {
       const [b, a] = await Promise.all([getBookings(password), getAccounts(password)]);
-      const sorted = [...b].sort((x, y) => {
-        const dateA = x.booking.date.split('-').reverse().join('');
-        const dateB = y.booking.date.split('-').reverse().join('');
-        if (dateA !== dateB) return dateA.localeCompare(dateB);
-        return (x.booking.time ?? '').localeCompare(y.booking.time ?? '');
-      });
+      const now = new Date();
+      const sorted = [...b]
+        .filter((x) => {
+          const [dd = 0, mm = 1, yyyy = 1970] = x.booking.date.split('-').map(Number);
+          const [hh = 0, min = 0] = x.booking.time.split(':').map(Number);
+          const expiresAt = new Date(yyyy, mm - 1, dd, hh + 1, min);
+          return expiresAt > now;
+        })
+        .sort((x, y) => {
+          const dateA = x.booking.date.split('-').reverse().join('');
+          const dateB = y.booking.date.split('-').reverse().join('');
+          if (dateA !== dateB) return dateA.localeCompare(dateB);
+          return (x.booking.time ?? '').localeCompare(y.booking.time ?? '');
+        });
       setBookings(sorted);
       setAccounts(a);
     } catch (e) {
