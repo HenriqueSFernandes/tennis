@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { getBookings, getAccounts } from '../api';
+import { getSchedule, getAccounts } from '../api';
 import type { CurrentBookingInfo, AccountSummary } from '../types';
 
 const DAY_NAMES = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -18,9 +18,36 @@ export function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const [b, a] = await Promise.all([getBookings(password), getAccounts(password)]);
+      const [s0, s1, s2, a] = await Promise.all([
+        getSchedule(password, 0),
+        getSchedule(password, 1),
+        getSchedule(password, 2),
+        getAccounts(password),
+      ]);
+
+      const allSlots = [s0, s1, s2].flatMap((s) =>
+        s.courts.flatMap((court) =>
+          court.slots
+            .filter((slot) => slot.isOurs)
+            .map((slot) => {
+              const acc = a.find((ac) => ac.id === slot.ourAccountId);
+              return {
+                accountId: slot.ourAccountId ?? '',
+                username: acc?.username ?? slot.bookedBy ?? '',
+                displayName: acc?.displayName ?? slot.bookedBy ?? '',
+                courtId: court.courtId,
+                booking: {
+                  nome: slot.bookedByName ?? '',
+                  date: slot.date,
+                  time: slot.time,
+                },
+              };
+            }),
+        ),
+      );
+
       const now = new Date();
-      const sorted = [...b]
+      const sorted = allSlots
         .filter((x) => {
           const [dd = 0, mm = 1, yyyy = 1970] = x.booking.date.split('-').map(Number);
           const [hh = 0, min = 0] = x.booking.time.split(':').map(Number);
@@ -33,6 +60,7 @@ export function Dashboard() {
           if (dateA !== dateB) return dateA.localeCompare(dateB);
           return (x.booking.time ?? '').localeCompare(y.booking.time ?? '');
         });
+
       setBookings(sorted);
       setAccounts(a);
     } catch (e) {
@@ -156,7 +184,7 @@ export function Dashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-white font-medium">
-                      Court {b.courtId} — {b.booking.nome || b.displayName}
+                      Court {b.courtId} — {b.displayName || b.booking.nome || b.username}
                     </p>
                     {b.booking.date && (
                       <p className="text-emerald-400 text-sm">
