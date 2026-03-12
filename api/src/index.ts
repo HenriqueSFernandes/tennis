@@ -131,29 +131,24 @@ app.get('/api/schedule', async (c) => {
   const pwd = await getDecryptedPassword(db, firstAcc.id, appPassword);
   if (!pwd) return c.json({ error: 'Could not decrypt credentials' }, 500);
 
-  // Warm sessions for ALL accounts so their user_ids are saved to the DB,
-  // ensuring ourUsers is correctly populated even on a cold start.
-  await Promise.allSettled(
-    accounts.map(async (acc) => {
-      const s = getStoredAccount(db, acc.id);
-      const p = s ? await getDecryptedPassword(db, acc.id, appPassword) : null;
-      if (s && p) await getSession(db, acc.id, s.username, p);
-    }),
-  );
-
-  // Build siteUserId → SQLite accountId map from the now-populated sessions
-  const ourUsers = new Map<string, string>();
-  for (const acc of accounts) {
-    const siteUserId = getSiteUserId(db, acc.id);
-    if (siteUserId && siteUserId !== '0') ourUsers.set(siteUserId, acc.id);
-  }
-
-  // Fetch schedules — return empty courts on error instead of crashing with 500
   try {
+    // Warm the first account's session explicitly so its user_id is in the DB
+    // before we build ourUsers. Other accounts' user_ids come from their own
+    // cached sessions (populated when they log in via /api/bookings etc.).
+    await getSession(db, firstAcc.id, stored.username, pwd);
+
+    // Build siteUserId → SQLite accountId map from all cached sessions
+    const ourUsers = new Map<string, string>();
+    for (const acc of accounts) {
+      const siteUserId = getSiteUserId(db, acc.id);
+      if (siteUserId && siteUserId !== '0') ourUsers.set(siteUserId, acc.id);
+    }
+
     const [court1, court2] = await Promise.all([
       getCourtSchedule(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
       getCourtSchedule(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
     ]);
+
     return c.json({ courts: [court1, court2], weekOffset });
   } catch (e) {
     console.error('[schedule] fetch failed:', e);
