@@ -1,4 +1,4 @@
-# rio-tinto
+# Rio Tinto Tennis
 
 > **Disclaimer:** This project was fully vibe coded, I did not look at a single line of code. It was created out of necessity and as a test of what current AI tools are capable of.
 
