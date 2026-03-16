@@ -5,7 +5,7 @@ const DAY_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 interface CourtGridProps {
   schedule: CourtSchedule;
   accounts: AccountSummary[];
-  onSlotClick: (slot: ScheduleSlot) => void;
+  onSlotClick: (slot: ScheduleSlot, courtId: number) => void;
 }
 
 export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
@@ -91,7 +91,7 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
                     <td key={dayIdx} className="px-1 py-1">
                       <div
                         className={slotClass(slot, dayIdx)}
-                        onClick={() => clickable && slot && onSlotClick(slot)}
+                        onClick={() => clickable && slot && onSlotClick(slot, schedule.courtId)}
                         title={
                           slot?.bookedBy
                             ? slot.isOurs

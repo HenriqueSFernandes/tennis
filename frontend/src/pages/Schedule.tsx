@@ -15,7 +15,9 @@ export function Schedule() {
 
   // Modal state
   const [bookSlot, setBookSlot] = useState<ScheduleSlot | null>(null);
+  const [bookCourtId, setBookCourtId] = useState<number | null>(null);
   const [cancelSlot, setCancelSlot] = useState<ScheduleSlot | null>(null);
+  const [cancelCourtId, setCancelCourtId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     if (!password) return;
@@ -39,21 +41,21 @@ export function Schedule() {
     loadData();
   }, [loadData]);
 
-  function handleSlotClick(slot: ScheduleSlot) {
+  function handleSlotClick(slot: ScheduleSlot, courtId: number) {
     if (slot.isOurs) {
       setCancelSlot(slot);
+      setCancelCourtId(courtId);
     } else if (!slot.bookedBy) {
       setBookSlot(slot);
+      setBookCourtId(courtId);
     }
   }
 
   async function handleBook(accountId: string) {
-    if (!bookSlot || !password) return;
+    if (!bookSlot || !bookCourtId || !password) return;
     await book(password, {
       accountId,
-      courtId: schedule!.courts.find((c) =>
-        c.slots.some((s) => s.date === bookSlot.date && s.time === bookSlot.time && s.dayIndex === bookSlot.dayIndex),
-      )!.courtId,
+      courtId: bookCourtId,
       date: bookSlot.date,
       dayIndex: bookSlot.dayIndex,
       turno: bookSlot.turno,
@@ -61,22 +63,15 @@ export function Schedule() {
       semana: weekOffset,
     });
     setBookSlot(null);
+    setBookCourtId(null);
     await loadData();
   }
 
   async function handleCancel() {
-    if (!cancelSlot || !password) return;
-    const courtId = schedule!.courts.find((c) =>
-      c.slots.some(
-        (s) =>
-          s.date === cancelSlot.date &&
-          s.time === cancelSlot.time &&
-          s.dayIndex === cancelSlot.dayIndex,
-      ),
-    )!.courtId;
+    if (!cancelSlot || !cancelCourtId || !password) return;
     await cancelBook(password, {
       accountId: cancelSlot.ourAccountId!,
-      courtId,
+      courtId: cancelCourtId,
       date: cancelSlot.date,
       dayIndex: cancelSlot.dayIndex,
       turno: cancelSlot.turno,
@@ -84,6 +79,7 @@ export function Schedule() {
       semana: weekOffset,
     });
     setCancelSlot(null);
+    setCancelCourtId(null);
     await loadData();
   }
 
@@ -94,23 +90,12 @@ export function Schedule() {
     return `Semana +${weekOffset}`;
   }
 
-  const bookSlotCourt = bookSlot
-    ? schedule?.courts.find((c) =>
-        c.slots.some(
-          (s) => s.date === bookSlot.date && s.time === bookSlot.time && s.dayIndex === bookSlot.dayIndex,
-        ),
-      )
+  const bookSlotCourt = bookSlot && bookCourtId
+    ? schedule?.courts.find((c) => c.courtId === bookCourtId)
     : null;
 
-  const cancelSlotCourt = cancelSlot
-    ? schedule?.courts.find((c) =>
-        c.slots.some(
-          (s) =>
-            s.date === cancelSlot.date &&
-            s.time === cancelSlot.time &&
-            s.dayIndex === cancelSlot.dayIndex,
-        ),
-      )
+  const cancelSlotCourt = cancelSlot && cancelCourtId
+    ? schedule?.courts.find((c) => c.courtId === cancelCourtId)
     : null;
 
   const cancelAccountName =
