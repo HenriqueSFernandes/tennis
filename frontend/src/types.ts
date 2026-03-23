@@ -51,6 +51,11 @@ export interface AddAccountRequest {
   phone: string;
 }
 
+export interface UpdateAccountRequest {
+  displayName: string;
+  phone: string;
+}
+
 export interface BookRequest {
   accountId: string;
   courtId: number;

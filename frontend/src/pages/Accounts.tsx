@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../AuthContext';
-import { getAccounts, addAccount, deleteAccount } from '../api';
+import { getAccounts, addAccount, deleteAccount, updateAccount } from '../api';
 import { AccountCard } from '../components/AccountCard';
-import type { AccountSummary, AddAccountRequest } from '../types';
+import { EditAccountModal } from '../components/EditAccountModal';
+import type { AccountSummary, AddAccountRequest, UpdateAccountRequest } from '../types';
 
 export function Accounts() {
   const { password } = useAuth();
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingAccount, setEditingAccount] = useState<AccountSummary | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   // Add form state
@@ -92,6 +95,24 @@ export function Accounts() {
       setError(e instanceof Error ? e.message : 'Erro ao remover conta');
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  function handleEdit(account: AccountSummary) {
+    setEditingAccount(account);
+  }
+
+  async function handleSaveEdit(id: string, data: UpdateAccountRequest) {
+    if (!password) return;
+    setSavingId(id);
+    try {
+      const updated = await updateAccount(password, id, data);
+      setAccounts((prev) => prev.map((a) => (a.id === id ? updated : a)));
+      setEditingAccount(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao guardar alterações');
+    } finally {
+      setSavingId(null);
     }
   }
 
@@ -289,6 +310,7 @@ export function Accounts() {
               key={acc.id}
               account={acc}
               onDelete={handleDelete}
+              onEdit={handleEdit}
               deleting={deletingId === acc.id}
             />
           ))}
@@ -306,6 +328,15 @@ export function Accounts() {
           <p>Cada conta pode ter no máximo 1 reserva ativa por dia.</p>
         </div>
       </div>
+
+      {editingAccount && (
+        <EditAccountModal
+          account={editingAccount}
+          onSave={handleSaveEdit}
+          onCancel={() => setEditingAccount(null)}
+          saving={savingId === editingAccount.id}
+        />
+      )}
     </div>
   );
 }

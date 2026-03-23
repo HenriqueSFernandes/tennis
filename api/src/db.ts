@@ -123,6 +123,18 @@ export function deleteAccount(db: Db, id: string): boolean {
   return true;
 }
 
+export function updateAccount(
+  db: Db,
+  id: string,
+  displayName: string,
+  phone: string,
+): boolean {
+  const result = db
+    .prepare('UPDATE accounts SET display_name = ?, phone = ? WHERE id = ?')
+    .run(displayName, phone, id);
+  return result.changes > 0;
+}
+
 export async function getDecryptedPassword(
   db: Db,
   id: string,

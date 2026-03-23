@@ -1,6 +1,7 @@
 import type {
   AccountSummary,
   AddAccountRequest,
+  UpdateAccountRequest,
   ScheduleResponse,
   CurrentBookingInfo,
   BookRequest,
@@ -77,6 +78,17 @@ export async function addAccount(
 
 export async function deleteAccount(password: string, id: string): Promise<void> {
   await request<{ ok: boolean }>(`/accounts/${id}`, password, { method: 'DELETE' });
+}
+
+export async function updateAccount(
+  password: string,
+  id: string,
+  data: UpdateAccountRequest,
+): Promise<AccountSummary> {
+  return request<AccountSummary>(`/accounts/${id}`, password, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
 }
 
 // ── Schedule ──────────────────────────────────────────────────────────────────

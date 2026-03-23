@@ -2,8 +2,8 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import 'dotenv/config';
-import type { AddAccountRequest, BookRequest, CancelRequest } from './types.js';
-import { openDb, listAccounts, addAccount, deleteAccount, getStoredAccount, getDecryptedPassword, getSiteUserId } from './db.js';
+import type { AddAccountRequest, UpdateAccountRequest, BookRequest, CancelRequest } from './types.js';
+import { openDb, listAccounts, addAccount, deleteAccount, updateAccount, getStoredAccount, getDecryptedPassword, getSiteUserId } from './db.js';
 import { getCourtSchedule, makeBooking, cancelBooking, getCurrentBooking, getSession } from './riotintoClient.js';
 
 const db = openDb();
@@ -26,7 +26,7 @@ app.use(
       return null;
     },
     allowHeaders: ['Content-Type', 'X-App-Password'],
-    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     maxAge: 86400,
   }),
 );
@@ -80,6 +80,27 @@ app.delete('/api/accounts/:id', async (c) => {
   const deleted = deleteAccount(db, id);
   if (!deleted) return c.json({ error: 'Account not found' }, 404);
   return c.json({ ok: true });
+});
+
+// ── PUT /api/accounts/:id ────────────────────────────────────────────────────
+app.put('/api/accounts/:id', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json<UpdateAccountRequest>();
+  const { displayName, phone } = body;
+
+  if (!displayName || !phone) {
+    return c.json({ error: 'Missing required fields: displayName, phone' }, 400);
+  }
+  if (!/^\d{9}$/.test(phone)) {
+    return c.json({ error: 'Phone must be exactly 9 digits' }, 400);
+  }
+
+  const updated = updateAccount(db, id, displayName, phone);
+  if (!updated) return c.json({ error: 'Account not found' }, 404);
+
+  const accounts = listAccounts(db);
+  const account = accounts.find((a) => a.id === id);
+  return c.json(account);
 });
 
 // ── GET /api/bookings ─────────────────────────────────────────────────────────

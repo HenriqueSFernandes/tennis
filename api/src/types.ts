@@ -96,6 +96,12 @@ export interface AddAccountRequest {
   phone: string;
 }
 
+// Request body for PUT /api/accounts/:id
+export interface UpdateAccountRequest {
+  displayName: string;
+  phone: string;
+}
+
 // Request body for POST /api/book
 export interface BookRequest {
   accountId: string;
