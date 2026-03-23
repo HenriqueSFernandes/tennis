@@ -138,3 +138,20 @@ html {
     box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.4);
   }
 }
+
+/* ── Page Transition Animation ────────────────────────────────────── */
+
+.page-transition {
+  animation: pageSlideIn 0.25s ease-out forwards;
+}
+
+@keyframes pageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

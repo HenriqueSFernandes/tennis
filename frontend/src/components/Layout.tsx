@@ -40,8 +40,11 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="fade-in">
+      <main className="flex-1 overflow-hidden relative">
+        <div
+          key={location.pathname}
+          className="page-transition h-full"
+        >
           <Outlet />
         </div>
       </main>
