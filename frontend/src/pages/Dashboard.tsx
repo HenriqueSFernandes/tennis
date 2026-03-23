@@ -74,67 +74,108 @@ export function Dashboard() {
     loadData();
   }, [password]);
 
+  const bookedAccountsCount = new Set(bookings.map(b => b.accountId)).size;
+
   return (
-    <div className="p-4 space-y-6 max-w-2xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
+      {/* Header with Stats */}
       <div className="flex items-center justify-between">
-        <h1 className="text-white text-xl font-bold">Dashboard</h1>
+        <div>
+          <h1 className="text-white text-2xl font-bold">Dashboard</h1>
+          <p className="text-slate-400 text-sm mt-0.5">
+            {bookings.length > 0 
+              ? `${bookings.length} reserva${bookings.length !== 1 ? 's' : ''} ativa${bookings.length !== 1 ? 's' : ''}`
+              : 'Nenhuma reserva ativa'
+            }
+          </p>
+        </div>
         <button
           onClick={loadData}
           disabled={loading}
-          className="text-slate-400 hover:text-white transition disabled:opacity-40"
+          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
           title="Atualizar"
         >
-          <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+          <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-900/40 border border-red-700 text-red-300 rounded-xl p-4 text-sm">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-200 rounded-xl p-4 text-sm flex items-start gap-3 animate-shake">
+          <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
           {error}
         </div>
       )}
 
-      {/* Account summary */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-slate-300 text-sm font-medium uppercase tracking-wide">Contas</h2>
-          <Link to="/accounts" className="text-emerald-400 text-xs hover:text-emerald-300 transition">
+      {/* Account Summary */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UsersIcon className="w-4 h-4 text-slate-500" />
+            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">Contas</h2>
+          </div>
+          <Link 
+            to="/accounts" 
+            className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+          >
             Gerir
+            <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
 
         {accounts.length === 0 && !loading ? (
-          <div className="bg-slate-800 rounded-xl p-6 text-center">
-            <p className="text-slate-400 text-sm">Nenhuma conta configurada.</p>
-            <Link
-              to="/accounts"
-              className="mt-3 inline-block text-emerald-400 text-sm hover:text-emerald-300 transition"
-            >
-              Adicionar conta
-            </Link>
+          <EmptyState 
+            icon={<UsersIcon className="w-8 h-8" />}
+            title="Nenhuma conta configurada"
+            description="Adicione contas riotinto.pt para começar a reservar campos."
+            action={
+              <Link
+                to="/accounts"
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Adicionar conta
+              </Link>
+            }
+          />
+        ) : loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[1, 2].map((i) => (
+              <AccountCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {accounts.map((acc) => {
               const hasBooking = bookings.some((b) => b.accountId === acc.id);
               return (
                 <div
                   key={acc.id}
-                  className={`rounded-xl p-3 flex items-center gap-3 ${
-                    hasBooking ? 'bg-emerald-900/40 border border-emerald-700/50' : 'bg-slate-800'
+                  className={`group bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/50 card-hover ${
+                    hasBooking ? 'ring-1 ring-emerald-500/30' : ''
                   }`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
+                    hasBooking 
+                      ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20' 
+                      : 'bg-slate-700'
+                  }`}>
                     {acc.displayName.charAt(0).toUpperCase()}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{acc.displayName}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-semibold truncate">{acc.displayName}</p>
                     <p className="text-slate-500 text-xs truncate">{acc.username}</p>
-                    <p className={`text-xs ${hasBooking ? 'text-emerald-400' : 'text-slate-500'}`}>
-                      {hasBooking ? 'Tem reserva' : 'Sem reserva'}
-                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    {hasBooking ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
+                        <CheckIcon className="w-3.5 h-3.5" />
+                        Ativa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-700 text-slate-400 text-xs">
+                        Inativa
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -143,65 +184,212 @@ export function Dashboard() {
         )}
       </section>
 
-      {/* Active bookings */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-slate-300 text-sm font-medium uppercase tracking-wide">
-            Reservas ativas
-          </h2>
-          <Link to="/schedule" className="text-emerald-400 text-xs hover:text-emerald-300 transition">
+      {/* Active Bookings */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="w-4 h-4 text-slate-500" />
+            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+              Reservas ativas
+            </h2>
+          </div>
+          <Link 
+            to="/schedule" 
+            className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+          >
             Ver campos
+            <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
 
         {loading ? (
           <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <div key={i} className="bg-slate-800 rounded-xl p-4 animate-pulse">
-                <div className="h-4 bg-slate-700 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-slate-700 rounded w-1/3" />
-              </div>
+            {[1, 2, 3].map((i) => (
+              <BookingCardSkeleton key={i} />
             ))}
           </div>
         ) : bookings.length === 0 ? (
-          <div className="bg-slate-800 rounded-xl p-6 text-center">
-            <p className="text-slate-400 text-sm">Nenhuma reserva ativa.</p>
-            <Link
-              to="/schedule"
-              className="mt-3 inline-block text-emerald-400 text-sm hover:text-emerald-300 transition"
-            >
-              Reservar campo
-            </Link>
-          </div>
+          <EmptyState 
+            icon={<CalendarIcon className="w-8 h-8" />}
+            title="Nenhuma reserva ativa"
+            description="Não há reservas de campos para os próximos dias."
+            action={
+              <Link
+                to="/schedule"
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Reservar campo
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-3">
             {bookings.map((b, i) => {
               const acc = accounts.find((a) => a.id === b.accountId);
+              const [dd, mm] = b.booking.date.split('-');
+              const isToday = isDateToday(b.booking.date);
+              
               return (
-                <div key={i} className="bg-slate-800 rounded-xl p-4 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-700 flex items-center justify-center text-white font-bold shrink-0">
-                    C{b.courtId}
+                <Link
+                  key={i}
+                  to="/schedule"
+                  className="group bg-slate-800 rounded-xl p-4 flex items-center gap-4 border border-slate-700/50 card-hover"
+                >
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex flex-col items-center justify-center text-white font-bold shrink-0 shadow-lg shadow-emerald-900/30">
+                    <span className="text-lg leading-none">{dd}</span>
+                    <span className="text-xs font-medium opacity-80">{mm}</span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-white font-medium">
-                      Court {b.courtId} — {b.displayName || b.booking.nome || b.username}
-                    </p>
-                    {b.booking.date && (
-                      <p className="text-emerald-400 text-sm">
-                        {b.booking.date}{b.booking.time ? ` às ${b.booking.time}` : ''}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white font-semibold">
+                        Court {b.courtId}
                       </p>
-                    )}
+                      {isToday && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium">
+                          Hoje
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-emerald-400 text-sm font-medium">
+                      {b.booking.time}
+                    </p>
                     <p className="text-slate-400 text-xs mt-0.5">
                       {acc?.displayName ?? b.displayName}
-                      <span className="text-slate-500"> · {b.username}</span>
+                      <span className="text-slate-600"> · </span>
+                      <span className="text-slate-500">{b.username}</span>
                     </p>
                   </div>
-                </div>
+                  <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="p-2 text-slate-400 group-hover:text-white group-hover:bg-slate-700 rounded-lg transition-colors inline-flex items-center justify-center">
+                      <ArrowRightIcon className="w-4 h-4" />
+                    </span>
+                  </div>
+                </Link>
               );
             })}
           </div>
         )}
       </section>
     </div>
+  );
+}
+
+// Helper Components
+
+function EmptyState({ 
+  icon, 
+  title, 
+  description, 
+  action 
+}: { 
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-slate-800 mx-auto mb-4 flex items-center justify-center text-slate-600">
+        {icon}
+      </div>
+      <h3 className="text-white font-medium mb-1">{title}</h3>
+      <p className="text-slate-500 text-sm mb-4">{description}</p>
+      {action}
+    </div>
+  );
+}
+
+function AccountCardSkeleton() {
+  return (
+    <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/30">
+      <div className="w-11 h-11 rounded-xl bg-slate-700 shimmer" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-slate-700 rounded-lg shimmer w-3/4" />
+        <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/2" />
+      </div>
+    </div>
+  );
+}
+
+function BookingCardSkeleton() {
+  return (
+    <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-4 border border-slate-700/30">
+      <div className="w-14 h-14 rounded-xl bg-slate-700 shimmer" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-slate-700 rounded-lg shimmer w-1/3" />
+        <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/4" />
+        <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/2" />
+      </div>
+    </div>
+  );
+}
+
+// Helper Functions
+
+function isDateToday(dateStr: string): boolean {
+  const [dd, mm, yyyy] = dateStr.split('-').map(Number);
+  const date = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 1);
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+}
+
+// Icon Components
+
+function RefreshIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  );
+}
+
+function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
   );
 }

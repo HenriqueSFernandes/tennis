@@ -5,6 +5,8 @@ import { CourtGrid } from '../components/CourtGrid';
 import { BookingModal, CancelModal } from '../components/BookingModal';
 import type { ScheduleResponse, AccountSummary, ScheduleSlot } from '../types';
 
+const WEEK_LABELS = ['Esta semana', 'Próxima semana', 'Daqui a 2 semanas'];
+
 export function Schedule() {
   const { password } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
@@ -83,13 +85,6 @@ export function Schedule() {
     await loadData();
   }
 
-  // Week label
-  function weekLabel(): string {
-    if (weekOffset === 0) return 'Esta semana';
-    if (weekOffset === 1) return 'Próxima semana';
-    return `Semana +${weekOffset}`;
-  }
-
   const bookSlotCourt = bookSlot && bookCourtId
     ? schedule?.courts.find((c) => c.courtId === bookCourtId)
     : null;
@@ -103,47 +98,80 @@ export function Schedule() {
       ? accounts.find((a) => a.id === cancelSlot.ourAccountId)?.displayName ?? '?'
       : '?';
 
+  // Count our bookings this week
+  const ourBookingsCount = schedule?.courts.reduce((total, court) => {
+    return total + court.slots.filter(slot => slot.isOurs).length;
+  }, 0) ?? 0;
+
   return (
-    <div className="p-4 space-y-5 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-white text-xl font-bold">Campos</h1>
+        <div>
+          <h1 className="text-white text-2xl font-bold">Campos</h1>
+          <p className="text-slate-400 text-sm mt-0.5">
+            {ourBookingsCount > 0 
+              ? `${ourBookingsCount} reserva${ourBookingsCount !== 1 ? 's' : ''} esta semana`
+              : 'Sem reservas nesta semana'
+            }
+          </p>
+        </div>
         <button
           onClick={loadData}
           disabled={loading}
-          className="text-slate-400 hover:text-white transition disabled:opacity-40"
+          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
+          title="Atualizar"
         >
-          <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+          <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      {/* Week navigation */}
-      <div className="flex items-center justify-between bg-slate-800 rounded-xl px-4 py-2.5">
-        <button
-          onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
-          disabled={weekOffset === 0}
-          className="text-slate-400 hover:text-white disabled:opacity-30 transition p-1"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <span className="text-white text-sm font-medium">{weekLabel()}</span>
-        <button
-          onClick={() => setWeekOffset((w) => Math.min(2, w + 1))}
-          disabled={weekOffset >= 2}
-          className="text-slate-400 hover:text-white disabled:opacity-30 transition p-1"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+      {/* Week Navigation */}
+      <div className="bg-slate-800 rounded-2xl p-2 border border-slate-700/50">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
+            disabled={weekOffset === 0}
+            className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+            <span className="hidden sm:inline text-sm font-medium">Anterior</span>
+          </button>
+
+          <span className="text-white font-semibold">
+            {WEEK_LABELS[weekOffset] ?? `Semana +${weekOffset}`}
+          </span>
+
+          <button
+            onClick={() => setWeekOffset((w) => Math.min(2, w + 1))}
+            disabled={weekOffset >= 2}
+            className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
+          >
+            <span className="hidden sm:inline text-sm font-medium">Seguinte</span>
+            <ChevronRightIcon className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Week Progress Indicator */}
+        <div className="flex gap-1.5 mt-3 px-2 pb-1">
+          {[0, 1, 2].map((offset) => (
+            <button
+              key={offset}
+              onClick={() => setWeekOffset(offset)}
+              className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
+                offset === weekOffset 
+                  ? 'bg-emerald-500' 
+                  : 'bg-slate-700 hover:bg-slate-600'
+              }`}
+              aria-label={`Ir para ${WEEK_LABELS[offset]}`}
+            />
+          ))}
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-900/40 border border-red-700 text-red-300 rounded-xl p-4 text-sm">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-200 rounded-xl p-4 text-sm flex items-start gap-3">
+          <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
           {error}
         </div>
       )}
@@ -151,14 +179,7 @@ export function Schedule() {
       {loading ? (
         <div className="space-y-5">
           {[1, 2].map((i) => (
-            <div key={i} className="bg-slate-800 rounded-2xl p-4 animate-pulse">
-              <div className="h-5 bg-slate-700 rounded w-1/3 mb-4" />
-              <div className="space-y-2">
-                {[1, 2, 3, 4].map((j) => (
-                  <div key={j} className="h-8 bg-slate-700 rounded" />
-                ))}
-              </div>
-            </div>
+            <CourtGridSkeleton key={i} />
           ))}
         </div>
       ) : schedule ? (
@@ -174,7 +195,7 @@ export function Schedule() {
         </div>
       ) : null}
 
-      {/* Booking modal */}
+      {/* Booking Modal */}
       {bookSlot && bookSlotCourt && (
         <BookingModal
           slot={bookSlot}
@@ -185,7 +206,7 @@ export function Schedule() {
         />
       )}
 
-      {/* Cancel modal */}
+      {/* Cancel Modal */}
       {cancelSlot && cancelSlotCourt && (
         <CancelModal
           slot={cancelSlot}
@@ -196,5 +217,61 @@ export function Schedule() {
         />
       )}
     </div>
+  );
+}
+
+// Skeleton Components
+
+function CourtGridSkeleton() {
+  return (
+    <div className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/30">
+      <div className="px-4 py-4 border-b border-slate-700/50">
+        <div className="h-5 bg-slate-700 rounded-lg shimmer w-1/4" />
+      </div>
+      <div className="p-4 space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex gap-3">
+            <div className="w-12 h-8 bg-slate-700 rounded-lg shimmer" />
+            {[1, 2, 3, 4, 5, 6, 7].map((j) => (
+              <div key={j} className="flex-1 h-8 bg-slate-700 rounded-lg shimmer" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Icon Components
+
+function RefreshIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  );
+}
+
+function ChevronLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   );
 }

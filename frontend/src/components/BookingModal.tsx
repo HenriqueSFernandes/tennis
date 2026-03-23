@@ -24,7 +24,6 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
       await onConfirm(selectedAccount);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao reservar');
-    } finally {
       setLoading(false);
     }
   }
@@ -33,58 +32,130 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
   const [dd, mm, yyyy] = slot.date.split('-');
   const dateStr = `${dd}/${mm}/${yyyy}`;
 
+  const selectedAccountData = accounts.find(a => a.id === selectedAccount);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+        onClick={!loading ? onCancel : undefined}
+      />
 
-      <div className="relative bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
-        <div>
-          <h2 className="text-white text-lg font-bold">Reservar campo</h2>
-          <p className="text-slate-400 text-sm mt-1">
-            {courtName} &middot; {DAY_NAMES[slot.dayIndex]}, {dateStr} &middot; {slot.time}h
-          </p>
+      <div className="relative bg-slate-800 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-sm p-6 space-y-5 scale-in border border-slate-700/50">
+        {/* Header */}
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-600/20 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+            <CalendarIcon className="w-7 h-7 text-emerald-400" />
+          </div>
+          <h2 className="text-white text-xl font-bold">Reservar campo</h2>
         </div>
 
-        {accounts.length > 1 && (
-          <div>
-            <label className="block text-slate-300 text-sm mb-2">Reservar com a conta</label>
-            <select
-              value={selectedAccount}
-              onChange={(e) => setSelectedAccount(e.target.value)}
-              className="w-full bg-slate-700 text-white rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500"
-            >
+        {/* Booking Details Card */}
+        <div className="bg-slate-900/50 rounded-xl p-4 space-y-3 border border-slate-700/50">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Campo</span>
+            <span className="text-white font-medium">{courtName}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Dia</span>
+            <span className="text-white font-medium">{DAY_NAMES[slot.dayIndex]}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Data</span>
+            <span className="text-white font-medium">{dateStr}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Hora</span>
+            <span className="text-emerald-400 font-semibold text-lg">{slot.time}</span>
+          </div>
+        </div>
+
+        {/* Account Selection */}
+        {accounts.length > 1 ? (
+          <div className="space-y-2">
+            <label className="text-slate-300 text-sm font-medium">Reservar com a conta</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.displayName} (@{acc.username})
-                </option>
+                <button
+                  key={acc.id}
+                  onClick={() => setSelectedAccount(acc.id)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left ${
+                    selectedAccount === acc.id
+                      ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/30'
+                      : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 ${
+                    selectedAccount === acc.id
+                      ? 'bg-emerald-600'
+                      : 'bg-slate-700'
+                  }`}>
+                    {acc.displayName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium truncate ${
+                      selectedAccount === acc.id ? 'text-white' : 'text-slate-300'
+                    }`}>
+                      {acc.displayName}
+                    </p>
+                    <p className="text-slate-500 text-xs truncate">@{acc.username}</p>
+                  </div>
+                  {selectedAccount === acc.id && (
+                    <CheckIcon className="w-5 h-5 text-emerald-400 shrink-0" />
+                  )}
+                </button>
               ))}
-            </select>
+            </div>
+          </div>
+        ) : accounts.length === 1 ? (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+            <p className="text-slate-400 text-sm mb-1">Reservar com</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                {accounts[0]!.displayName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-white font-medium">{accounts[0]!.displayName}</p>
+                <p className="text-slate-500 text-xs">@{accounts[0]!.username}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-start gap-2">
+            <AlertIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-red-300 text-sm">{error}</p>
           </div>
         )}
 
-        {accounts.length === 1 && (
-          <p className="text-slate-300 text-sm">
-            Conta: <span className="text-white font-medium">{accounts[0]!.displayName}</span>
-          </p>
-        )}
-
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        <div className="flex gap-3 pt-1">
+        {/* Actions */}
+        <div className="flex gap-3 pt-2">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-2.5 font-medium transition disabled:opacity-50"
+            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-medium transition-all duration-200 btn-press disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || !selectedAccount}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 font-medium transition disabled:opacity-50"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-medium transition-all duration-200 btn-press disabled:opacity-50 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
-            {loading ? 'A reservar...' : 'Confirmar'}
+            {loading ? (
+              <>
+                <SpinnerIcon className="w-5 h-5 animate-spin" />
+                A reservar...
+              </>
+            ) : (
+              <>
+                <CheckIcon className="w-5 h-5" />
+                Confirmar
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -92,7 +163,7 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
   );
 }
 
-// ── Cancel modal ──────────────────────────────────────────────────────────────
+// ── Cancel Modal ──────────────────────────────────────────────────────────────
 
 interface CancelModalProps {
   slot: ScheduleSlot;
@@ -113,7 +184,6 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
       await onConfirm();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao cancelar');
-    } finally {
       setLoading(false);
     }
   }
@@ -123,40 +193,137 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+        onClick={!loading ? onCancel : undefined}
+      />
 
-      <div className="relative bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
-        <div>
-          <h2 className="text-white text-lg font-bold">Cancelar reserva</h2>
-          <p className="text-slate-400 text-sm mt-1">
-            {courtName} &middot; {dateStr} &middot; {slot.time}h
+      <div className="relative bg-slate-800 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-sm p-6 space-y-5 scale-in border border-slate-700/50">
+        {/* Header */}
+        <div className="text-center">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+            <AlertTriangleIcon className="w-7 h-7 text-rose-400" />
+          </div>
+          <h2 className="text-white text-xl font-bold">Cancelar reserva</h2>
+        </div>
+
+        {/* Booking Details Card */}
+        <div className="bg-slate-900/50 rounded-xl p-4 space-y-3 border border-slate-700/50">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Campo</span>
+            <span className="text-white font-medium">{courtName}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Conta</span>
+            <span className="text-white font-medium">{accountName}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Data</span>
+            <span className="text-white font-medium">{dateStr}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 text-sm">Hora</span>
+            <span className="text-emerald-400 font-semibold text-lg">{slot.time}</span>
+          </div>
+        </div>
+
+        {/* Warning Message */}
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">
+          <p className="text-rose-200 text-sm">
+            Tem a certeza que deseja cancelar esta reserva? 
+            <span className="block mt-1 text-rose-300/70 text-xs">
+              Esta ação não pode ser desfeita.
+            </span>
           </p>
         </div>
 
-        <p className="text-slate-300 text-sm">
-          Tem a certeza que quer cancelar a reserva de{' '}
-          <span className="text-white font-medium">{accountName}</span>?
-        </p>
+        {/* Error */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-start gap-2">
+            <AlertIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-red-300 text-sm">{error}</p>
+          </div>
+        )}
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        <div className="flex gap-3 pt-1">
+        {/* Actions */}
+        <div className="flex gap-3 pt-2">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-2.5 font-medium transition disabled:opacity-50"
+            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-3 font-medium transition-all duration-200 btn-press disabled:opacity-50"
           >
             Voltar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl py-2.5 font-medium transition disabled:opacity-50"
+            className="flex-1 bg-rose-600 hover:bg-rose-500 text-white rounded-xl py-3 font-medium transition-all duration-200 btn-press disabled:opacity-50 shadow-lg shadow-rose-500/20 flex items-center justify-center gap-2"
           >
-            {loading ? 'A cancelar...' : 'Cancelar reserva'}
+            {loading ? (
+              <>
+                <SpinnerIcon className="w-5 h-5 animate-spin" />
+                A cancelar...
+              </>
+            ) : (
+              <>
+                <XIcon className="w-5 h-5" />
+                Cancelar
+              </>
+            )}
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+// Icon Components
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+function AlertIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function AlertTriangleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function SpinnerIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
   );
 }

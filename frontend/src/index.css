@@ -2,23 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth scrolling */
+/* ── Base & Design Tokens ────────────────────────────────────────── */
+
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@layer base {
+  body {
+    @apply bg-slate-900 text-slate-100;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* Improved focus ring for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-900;
+  }
 }
+
+/* ── Custom Scrollbar ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
+  background: #334155;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #475569;
+}
+
+/* ── Utility Classes ────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Card hover lift effect */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  .card-hover:hover {
+    @apply -translate-y-0.5 shadow-xl shadow-black/20;
+  }
+
+  /* Button press effect */
+  .btn-press {
+    @apply active:scale-95 transition-transform duration-100;
+  }
+
+  /* Shimmer loading animation */
+  .shimmer {
+    @apply animate-pulse bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800;
+    background-size: 200% 100%;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-slate-800/80 backdrop-blur-xl border border-slate-700/50;
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
+  }
+
+  /* Focus ring utility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-slate-900;
+  }
+
+  /* Fade in animation */
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Scale in animation for modals */
+  .scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Slide up animation */
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Glow effects */
+  .glow-emerald {
+    box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.4);
+  }
+
+  .glow-rose {
+    box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.4);
+  }
 }
