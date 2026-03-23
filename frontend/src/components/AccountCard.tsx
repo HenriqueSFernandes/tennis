@@ -25,9 +25,9 @@ export function AccountCard({ account, onDelete, onEdit, deleting }: AccountCard
               {account.username}
             </span>
             <span className="text-slate-600">·</span>
-            <span className="flex items-center gap-1">
-              <PhoneIcon className="w-3 h-3" />
-              {account.phone}
+            <span className="flex items-center gap-1 truncate max-w-[100px] sm:max-w-none">
+              <PhoneIcon className="w-3 h-3 shrink-0" />
+              <span className="truncate">{account.phone}</span>
             </span>
           </div>
           <p className="text-slate-500 text-xs mt-0.5 flex items-center gap-1">
