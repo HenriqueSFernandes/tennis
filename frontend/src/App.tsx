@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
+import { DataCacheProvider } from './DataCacheContext';
 import { PasswordGate } from './components/PasswordGate';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -26,7 +27,9 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <DataCacheProvider>
+          <AppRoutes />
+        </DataCacheProvider>
       </AuthProvider>
     </BrowserRouter>
   );

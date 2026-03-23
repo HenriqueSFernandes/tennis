@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../AuthContext';
-import { getSchedule, getAccounts, book, cancelBook } from '../api';
+import { useDataCache } from '../DataCacheContext';
+import { book, cancelBook } from '../api';
 import { CourtGrid } from '../components/CourtGrid';
 import { BookingModal, CancelModal } from '../components/BookingModal';
 import type { ScheduleResponse, AccountSummary, ScheduleSlot } from '../types';
@@ -9,6 +10,7 @@ const WEEK_LABELS = ['Esta semana', 'Próxima semana', 'Daqui a 2 semanas'];
 
 export function Schedule() {
   const { password } = useAuth();
+  const { getSchedule, getAccounts, invalidate, refresh, staleKeys } = useDataCache();
   const [weekOffset, setWeekOffset] = useState(0);
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
@@ -27,8 +29,8 @@ export function Schedule() {
     setError('');
     try {
       const [s, a] = await Promise.all([
-        getSchedule(password, weekOffset),
-        getAccounts(password),
+        getSchedule(weekOffset),
+        getAccounts(),
       ]);
       setSchedule(s);
       setAccounts(a);
@@ -37,11 +39,18 @@ export function Schedule() {
     } finally {
       setLoading(false);
     }
-  }, [password, weekOffset]);
+  }, [password, weekOffset, getSchedule, getAccounts]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const handleRefresh = async () => {
+    await refresh();
+    await loadData();
+  };
+
+  const isScheduleStale = staleKeys.has(`schedule:${weekOffset}`);
 
   function handleSlotClick(slot: ScheduleSlot, courtId: number) {
     if (slot.isOurs) {
@@ -64,6 +73,7 @@ export function Schedule() {
       hora: bookSlot.hora,
       semana: weekOffset,
     });
+    invalidate(`schedule:${weekOffset}`);
     setBookSlot(null);
     setBookCourtId(null);
     await loadData();
@@ -80,6 +90,7 @@ export function Schedule() {
       hora: cancelSlot.hora,
       semana: weekOffset,
     });
+    invalidate(`schedule:${weekOffset}`);
     setCancelSlot(null);
     setCancelCourtId(null);
     await loadData();
@@ -117,9 +128,9 @@ export function Schedule() {
           </p>
         </div>
         <button
-          onClick={loadData}
+          onClick={handleRefresh}
           disabled={loading}
-          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
+          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isScheduleStale && !loading ? 'animate-pulse' : ''}`}
           title="Atualizar"
         >
           <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />

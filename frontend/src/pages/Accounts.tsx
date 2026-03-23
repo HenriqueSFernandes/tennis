@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../AuthContext';
-import { getAccounts, addAccount, deleteAccount, updateAccount } from '../api';
+import { useDataCache } from '../DataCacheContext';
+import { addAccount, deleteAccount, updateAccount } from '../api';
 import { AccountCard } from '../components/AccountCard';
 import { EditAccountModal } from '../components/EditAccountModal';
 import type { AccountSummary, AddAccountRequest, UpdateAccountRequest } from '../types';
 
 export function Accounts() {
   const { password } = useAuth();
+  const { getAccounts, invalidate } = useDataCache();
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function Accounts() {
     if (!password) return;
     setLoading(true);
     try {
-      setAccounts(await getAccounts(password));
+      setAccounts(await getAccounts());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar contas');
     } finally {
@@ -40,7 +42,7 @@ export function Accounts() {
 
   useEffect(() => {
     loadAccounts();
-  }, [password]);
+  }, [password, getAccounts]);
 
   // Validation
   function validateField(field: keyof AddAccountRequest, value: string): string | undefined {
@@ -90,6 +92,7 @@ export function Accounts() {
     setDeletingId(id);
     try {
       await deleteAccount(password, id);
+      invalidate('accounts');
       setAccounts((prev) => prev.filter((a) => a.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao remover conta');
@@ -107,6 +110,7 @@ export function Accounts() {
     setSavingId(id);
     try {
       const updated = await updateAccount(password, id, data);
+      invalidate('accounts');
       setAccounts((prev) => prev.map((a) => (a.id === id ? updated : a)));
       setEditingAccount(null);
     } catch (e) {
@@ -133,6 +137,7 @@ export function Accounts() {
     setSubmitting(true);
     try {
       const newAcc = await addAccount(password, form);
+      invalidate('accounts');
       setAccounts((prev) => [...prev, newAcc]);
       setShowForm(false);
       setForm({ username: '', password: '', displayName: '', phone: '' });

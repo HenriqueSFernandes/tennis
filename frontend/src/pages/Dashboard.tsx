@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
-import { getSchedule, getAccounts } from '../api';
+import { useDataCache } from '../DataCacheContext';
 import type { CurrentBookingInfo, AccountSummary } from '../types';
 
 const DAY_NAMES = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
 export function Dashboard() {
   const { password } = useAuth();
+  const { getSchedule, getAccounts, refresh, staleKeys } = useDataCache();
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,10 +20,10 @@ export function Dashboard() {
     setError('');
     try {
       const [s0, s1, s2, a] = await Promise.all([
-        getSchedule(password, 0),
-        getSchedule(password, 1),
-        getSchedule(password, 2),
-        getAccounts(password),
+        getSchedule(0),
+        getSchedule(1),
+        getSchedule(2),
+        getAccounts(),
       ]);
 
       const allSlots = [s0, s1, s2].flatMap((s) =>
@@ -72,7 +73,14 @@ export function Dashboard() {
 
   useEffect(() => {
     loadData();
-  }, [password]);
+  }, [password, getSchedule, getAccounts]);
+
+  const handleRefresh = async () => {
+    await refresh();
+    await loadData();
+  };
+
+  const isDashboardStale = staleKeys.has('schedule:0') || staleKeys.has('schedule:1') || staleKeys.has('schedule:2') || staleKeys.has('accounts');
 
   const bookedAccountsCount = new Set(bookings.map(b => b.accountId)).size;
 
@@ -90,9 +98,9 @@ export function Dashboard() {
           </p>
         </div>
         <button
-          onClick={loadData}
+          onClick={handleRefresh}
           disabled={loading}
-          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
+          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isDashboardStale && !loading ? 'animate-pulse' : ''}`}
           title="Atualizar"
         >
           <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
