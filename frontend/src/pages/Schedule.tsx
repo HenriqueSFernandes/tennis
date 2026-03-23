@@ -16,6 +16,7 @@ export function Schedule() {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [weekDirection, setWeekDirection] = useState<'next' | 'prev' | null>(null);
 
   // Modal state
   const [bookSlot, setBookSlot] = useState<ScheduleSlot | null>(null);
@@ -44,6 +45,13 @@ export function Schedule() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (weekDirection) {
+      const timer = setTimeout(() => setWeekDirection(null), 250);
+      return () => clearTimeout(timer);
+    }
+  }, [weekDirection]);
 
   const handleRefresh = async () => {
     await refresh();
@@ -141,7 +149,10 @@ export function Schedule() {
       <div className="bg-slate-800 rounded-2xl p-2 border border-slate-700/50">
         <div className="flex items-center justify-between gap-2">
           <button
-            onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
+            onClick={() => {
+              setWeekDirection('prev');
+              setWeekOffset((w) => Math.max(0, w - 1));
+            }}
             disabled={weekOffset === 0}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
           >
@@ -154,7 +165,10 @@ export function Schedule() {
           </span>
 
           <button
-            onClick={() => setWeekOffset((w) => Math.min(2, w + 1))}
+            onClick={() => {
+              setWeekDirection('next');
+              setWeekOffset((w) => Math.min(2, w + 1));
+            }}
             disabled={weekOffset >= 2}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
           >
@@ -168,7 +182,10 @@ export function Schedule() {
           {[0, 1, 2].map((offset) => (
             <button
               key={offset}
-              onClick={() => setWeekOffset(offset)}
+              onClick={() => {
+                setWeekDirection(offset > weekOffset ? 'next' : 'prev');
+                setWeekOffset(offset);
+              }}
               className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
                 offset === weekOffset 
                   ? 'bg-emerald-500' 
@@ -194,7 +211,10 @@ export function Schedule() {
           ))}
         </div>
       ) : schedule ? (
-        <div className="space-y-5">
+        <div
+          key={`week-${weekOffset}`}
+          className={`space-y-5 ${weekDirection ? `week-transition-${weekDirection}` : ''}`}
+        >
           {schedule.courts.map((court) => (
             <CourtGrid
               key={court.courtId}

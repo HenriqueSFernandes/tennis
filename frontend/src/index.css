@@ -155,3 +155,35 @@ html {
     transform: translateX(0);
   }
 }
+
+/* ── Week Navigation Transitions ──────────────────────────────────── */
+
+.week-transition-next {
+  animation: weekSlideNext 0.25s ease-out forwards;
+}
+
+.week-transition-prev {
+  animation: weekSlidePrev 0.25s ease-out forwards;
+}
+
+@keyframes weekSlideNext {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes weekSlidePrev {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
