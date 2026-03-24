@@ -26,16 +26,14 @@ function parseJsonp(text) {
 }
 // ── Cookie helpers ────────────────────────────────────────────────────────────
 function extractCookies(headers) {
-    const cookies = [];
-    const raw = headers.get('set-cookie');
-    if (!raw)
-        return '';
-    for (const part of raw.split(',')) {
-        const nameVal = part.trim().split(';')[0];
-        if (nameVal)
-            cookies.push(nameVal.trim());
-    }
-    return cookies.join('; ');
+    // headers.get('set-cookie') only returns the first Set-Cookie header in Node.js fetch (undici).
+    // getSetCookie() correctly returns all of them as an array (Node.js 18+).
+    const setCookieHeaders = headers.getSetCookie?.() ??
+        (headers.get('set-cookie') ? [headers.get('set-cookie')] : []);
+    return setCookieHeaders
+        .map((h) => h.split(';')[0]?.trim() ?? '')
+        .filter(Boolean)
+        .join('; ');
 }
 function mergeCookies(existing, incoming) {
     const map = new Map();

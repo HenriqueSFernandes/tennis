@@ -8,6 +8,7 @@ exports.listAccounts = listAccounts;
 exports.getStoredAccount = getStoredAccount;
 exports.addAccount = addAccount;
 exports.deleteAccount = deleteAccount;
+exports.updateAccount = updateAccount;
 exports.getDecryptedPassword = getDecryptedPassword;
 exports.getCachedSession = getCachedSession;
 exports.saveSession = saveSession;
@@ -92,6 +93,12 @@ function deleteAccount(db, id) {
         return false;
     db.prepare('DELETE FROM sessions WHERE account_id = ?').run(id);
     return true;
+}
+function updateAccount(db, id, displayName, phone) {
+    const result = db
+        .prepare('UPDATE accounts SET display_name = ?, phone = ? WHERE id = ?')
+        .run(displayName, phone, id);
+    return result.changes > 0;
 }
 async function getDecryptedPassword(db, id, appPassword) {
     const acc = getStoredAccount(db, id);

@@ -25,7 +25,7 @@ app.use('*', (0, cors_1.cors)({
         return null;
     },
     allowHeaders: ['Content-Type', 'X-App-Password'],
-    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     maxAge: 86400,
 }));
 // ── Auth middleware ───────────────────────────────────────────────────────────
@@ -73,6 +73,24 @@ app.delete('/api/accounts/:id', async (c) => {
         return c.json({ error: 'Account not found' }, 404);
     return c.json({ ok: true });
 });
+// ── PUT /api/accounts/:id ────────────────────────────────────────────────────
+app.put('/api/accounts/:id', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const { displayName, phone } = body;
+    if (!displayName || !phone) {
+        return c.json({ error: 'Missing required fields: displayName, phone' }, 400);
+    }
+    if (!/^\d{9}$/.test(phone)) {
+        return c.json({ error: 'Phone must be exactly 9 digits' }, 400);
+    }
+    const updated = (0, db_js_1.updateAccount)(db, id, displayName, phone);
+    if (!updated)
+        return c.json({ error: 'Account not found' }, 404);
+    const accounts = (0, db_js_1.listAccounts)(db);
+    const account = accounts.find((a) => a.id === id);
+    return c.json(account);
+});
 // ── GET /api/bookings ─────────────────────────────────────────────────────────
 app.get('/api/bookings', async (c) => {
     const accounts = (0, db_js_1.listAccounts)(db);
@@ -115,18 +133,28 @@ app.get('/api/schedule', async (c) => {
     const pwd = await (0, db_js_1.getDecryptedPassword)(db, firstAcc.id, appPassword);
     if (!pwd)
         return c.json({ error: 'Could not decrypt credentials' }, 500);
-    // Build siteUserId → SQLite accountId map from cached sessions
-    const ourUsers = new Map();
-    for (const acc of accounts) {
-        const siteUserId = (0, db_js_1.getSiteUserId)(db, acc.id);
-        if (siteUserId && siteUserId !== '0')
-            ourUsers.set(siteUserId, acc.id);
+    try {
+        // Warm the first account's session explicitly so its user_id is in the DB
+        // before we build ourUsers. Other accounts' user_ids come from their own
+        // cached sessions (populated when they log in via /api/bookings etc.).
+        await (0, riotintoClient_js_1.getSession)(db, firstAcc.id, stored.username, pwd);
+        // Build siteUserId → SQLite accountId map from all cached sessions
+        const ourUsers = new Map();
+        for (const acc of accounts) {
+            const siteUserId = (0, db_js_1.getSiteUserId)(db, acc.id);
+            if (siteUserId && siteUserId !== '0')
+                ourUsers.set(siteUserId, acc.id);
+        }
+        const [court1, court2] = await Promise.all([
+            (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
+            (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
+        ]);
+        return c.json({ courts: [court1, court2], weekOffset });
     }
-    const [court1, court2] = await Promise.all([
-        (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 1, weekOffset, ourUsers),
-        (0, riotintoClient_js_1.getCourtSchedule)(db, firstAcc.id, stored.username, pwd, 2, weekOffset, ourUsers),
-    ]);
-    return c.json({ courts: [court1, court2], weekOffset });
+    catch (e) {
+        console.error('[schedule] fetch failed:', e);
+        return c.json({ courts: [], weekOffset });
+    }
 });
 // ── POST /api/book ────────────────────────────────────────────────────────────
 app.post('/api/book', async (c) => {

@@ -9,21 +9,13 @@ interface CourtGridProps {
 }
 
 export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
-  // Gather all unique time labels in order
   const times = Array.from(new Set(schedule.slots.map((s) => s.time))).sort();
 
-  // Build a lookup: "dayIndex-time" => slot
   const slotMap = new Map<string, ScheduleSlot>();
   for (const slot of schedule.slots) {
     slotMap.set(`${slot.dayIndex}-${slot.time}`, slot);
   }
 
-  // Today's day index (0=Mon)
-  const today = new Date();
-  const todayDow = today.getDay(); // 0=Sun
-  const todayMonIdx = todayDow === 0 ? 6 : todayDow - 1; // convert to Mon=0
-
-  // Is this day in the past?
   function isPastDate(date: string): boolean {
     if (!date) return false;
     const [dd, mm, yyyy] = date.split('-').map(Number);
@@ -33,6 +25,17 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
     return d < now;
   }
 
+  function isTodayDate(date: string): boolean {
+    if (!date) return false;
+    const [dd, mm, yyyy] = date.split('-').map(Number);
+    const today = new Date();
+    return (
+      (yyyy ?? 0) === today.getFullYear() &&
+      (mm ?? 1) - 1 === today.getMonth() &&
+      (dd ?? 1) === today.getDate()
+    );
+  }
+
   function getAccountName(accountId: string): string {
     return accounts.find((a) => a.id === accountId)?.displayName ?? '?';
   }
@@ -40,7 +43,7 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
   function slotClass(slot: ScheduleSlot | undefined, dayIndex: number): string {
     const past = isPastDate(schedule.weekDates[dayIndex] ?? '');
     const base = 'rounded-lg text-xs text-center transition-all duration-200 select-none relative overflow-hidden';
-    
+
     if (!slot) return `${base} bg-transparent`;
     if (past) return `${base} bg-slate-800/50 text-slate-600`;
     if (slot.isOurs) return `${base} bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-900/20 cursor-pointer btn-press`;
@@ -48,7 +51,6 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
     return `${base} bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer hover:shadow-lg hover:shadow-black/20 btn-press`;
   }
 
-  // Count our bookings for this court
   const ourBookingsCount = schedule.slots.filter(s => s.isOurs).length;
 
   return (
@@ -62,7 +64,7 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
           <div>
             <h3 className="text-white font-semibold">{schedule.courtName}</h3>
             <p className="text-slate-500 text-xs">
-              {ourBookingsCount > 0 
+              {ourBookingsCount > 0
                 ? `${ourBookingsCount} reserva${ourBookingsCount !== 1 ? 's' : ''} esta semana`
                 : 'Sem reservas'
               }
@@ -76,15 +78,14 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
         <table className="w-full min-w-[500px]">
           <thead>
             <tr className="border-b border-slate-700/30">
-              {/* Time column header */}
               <th className="w-14 px-2 py-3 text-slate-500 text-xs font-normal text-left">
                 <ClockIcon className="w-4 h-4" />
               </th>
               {schedule.weekDates.map((date, dayIdx) => {
                 const [dd, mm] = date.split('-');
-                const isToday = dayIdx === todayMonIdx;
+                const isToday = isTodayDate(date);
                 const isPast = isPastDate(date);
-                
+
                 return (
                   <th
                     key={dayIdx}
@@ -94,10 +95,10 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
                       {DAY_SHORT[dayIdx]}
                     </div>
                     <div className={`text-[11px] font-medium mt-0.5 ${
-                      isToday 
-                        ? 'text-emerald-300' 
-                        : isPast 
-                          ? 'text-slate-600' 
+                      isToday
+                        ? 'text-emerald-300'
+                        : isPast
+                          ? 'text-slate-600'
                           : 'text-slate-500'
                     }`}>
                       {dd}/{mm}
