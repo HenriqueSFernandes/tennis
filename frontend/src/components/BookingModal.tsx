@@ -54,6 +54,7 @@ export function BookingModal({
     setLoading(true);
     try {
       await onConfirm(selectedAccount);
+      setLoading(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao reservar");
       setLoading(false);
@@ -255,6 +256,7 @@ export function CancelModal({
     setLoading(true);
     try {
       await onConfirm();
+      setLoading(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao cancelar");
       setLoading(false);

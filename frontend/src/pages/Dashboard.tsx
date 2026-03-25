@@ -595,7 +595,6 @@ export function Dashboard() {
           accounts={accounts}
           onClose={() => setShowBulkBookModal(false)}
           onSuccess={() => {
-            setShowBulkBookModal(false);
             refresh();
             loadData();
           }}
