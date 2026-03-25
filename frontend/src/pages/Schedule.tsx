@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import {
   addFavorite,
@@ -24,9 +24,13 @@ const WEEK_LABELS = ["Esta semana", "Próxima semana", "Daqui a 2 semanas"];
 export function Schedule() {
   const { password } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { getSchedule, getAccounts, invalidate, refresh, staleKeys } =
     useDataCache();
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(() => {
+    const weekParam = searchParams.get("week");
+    return weekParam ? parseInt(weekParam, 10) : 0;
+  });
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);

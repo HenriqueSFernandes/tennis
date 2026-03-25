@@ -151,11 +151,15 @@ export function Dashboard() {
   function getWeekOffsetForDay(targetDayOfWeek: number): number {
     const today = new Date();
     const todayDay = today.getDay();
-    const todayMon = todayDay === 0 ? 6 : todayDay - 1;
-    const daysUntil = (targetDayOfWeek - todayMon + 7) % 7;
-    if (daysUntil === 0) return 0;
-    if (daysUntil <= 6) return 0;
-    return Math.ceil(daysUntil / 7);
+    const todayMon = todayDay === 0 ? 6 : todayDay - 1; // 0=Mon, 6=Sun
+
+    if (targetDayOfWeek === todayMon) {
+      return 0; // Today - go to current week
+    }
+    if (targetDayOfWeek > todayMon) {
+      return 0; // Future day this week
+    }
+    return 1; // Past day this week - go to next week
   }
 
   function computeNextDate(fav: Favorite): string {
