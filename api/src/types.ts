@@ -147,3 +147,48 @@ export interface AddFavoriteRequest {
 export interface UpdateFavoriteRequest {
   name: string;
 }
+
+// ── Bulk Book ─────────────────────────────────────────────────────────────────
+
+export interface BulkBookItem {
+  accountId: string;
+  courtId: number;
+  date: string; // "DD-MM-YYYY"
+  dayIndex: number;
+  turno: number;
+  hora: number;
+  semana: number;
+}
+
+export interface BulkBookRequest {
+  bookings: BulkBookItem[];
+  forceCancel: boolean; // If true, cancel existing bookings before booking
+}
+
+export interface BulkBookResult {
+  success: {
+    favoriteId?: string;
+    accountId: string;
+    courtId: number;
+    date: string;
+    dayIndex: number;
+    turno: number;
+    hora: number;
+  }[];
+  skipped: {
+    accountId: string;
+    courtId: number;
+    date: string;
+    reason:
+      | "already-booked-by-us"
+      | "booked-by-others"
+      | "past"
+      | "force-cancel-declined";
+  }[];
+  failed: {
+    accountId: string;
+    courtId: number;
+    date: string;
+    error: string;
+  }[];
+}

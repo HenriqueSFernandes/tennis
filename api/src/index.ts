@@ -29,6 +29,8 @@ import type {
   AddAccountRequest,
   AddFavoriteRequest,
   BookRequest,
+  BulkBookRequest,
+  BulkBookResult,
   CancelRequest,
   UpdateAccountRequest,
   UpdateFavoriteRequest,
@@ -375,6 +377,129 @@ app.delete("/api/favorites/:id", async (c) => {
   const deleted = deleteFavorite(db, id);
   if (!deleted) return c.json({ error: "Favorite not found" }, 404);
   return c.json({ ok: true });
+});
+
+// ── POST /api/bulk-book ─────────────────────────────────────────────────────────
+app.post("/api/bulk-book", async (c) => {
+  const body = await c.req.json<BulkBookRequest>();
+  const { bookings, forceCancel } = body;
+  const appPassword = process.env["APP_PASSWORD"]!;
+
+  const result: BulkBookResult = {
+    success: [],
+    skipped: [],
+    failed: [],
+  };
+
+  for (const booking of bookings) {
+    const { accountId, courtId, date, dayIndex, turno, hora, semana } = booking;
+
+    const stored = getStoredAccount(db, accountId);
+    if (!stored) {
+      result.failed.push({
+        accountId,
+        courtId,
+        date,
+        error: "Account not found",
+      });
+      continue;
+    }
+
+    const pwd = await getDecryptedPassword(db, accountId, appPassword);
+    if (!pwd) {
+      result.failed.push({
+        accountId,
+        courtId,
+        date,
+        error: "Could not decrypt credentials",
+      });
+      continue;
+    }
+
+    // Check if slot is in the past
+    const [dd, mm, yyyy] = date.split("-").map(Number);
+    const slotDate = new Date(yyyy!, mm! - 1, dd!);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (slotDate < today) {
+      result.skipped.push({
+        accountId,
+        courtId,
+        date,
+        reason: "past",
+      });
+      continue;
+    }
+
+    // If forceCancel is true, first cancel any existing booking for this slot
+    if (forceCancel) {
+      await cancelBooking(
+        db,
+        accountId,
+        stored.username,
+        pwd,
+        stored.displayName,
+        stored.phone,
+        courtId,
+        date,
+        dayIndex,
+        turno,
+        hora,
+        semana,
+      );
+    }
+
+    // Make the booking
+    const bookResult = await makeBooking(
+      db,
+      accountId,
+      stored.username,
+      pwd,
+      stored.displayName,
+      stored.phone,
+      courtId,
+      date,
+      dayIndex,
+      turno,
+      hora,
+      semana,
+    );
+
+    if (!bookResult.success) {
+      // Check if it was already booked
+      const errorMsg = bookResult.message ?? "";
+      if (
+        (errorMsg.includes("já") && errorMsg.includes("reservado")) ||
+        errorMsg.includes("ocupado")
+      ) {
+        result.skipped.push({
+          accountId,
+          courtId,
+          date,
+          reason: forceCancel ? "force-cancel-declined" : "booked-by-others",
+        });
+      } else {
+        result.failed.push({
+          accountId,
+          courtId,
+          date,
+          error: errorMsg || "Booking failed",
+        });
+      }
+      continue;
+    }
+
+    result.success.push({
+      accountId,
+      courtId,
+      date,
+      dayIndex,
+      turno,
+      hora,
+    });
+  }
+
+  return c.json(result);
 });
 
 // ── Helper functions for iCal export ──────────────────────────────────────────
