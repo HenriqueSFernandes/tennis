@@ -258,7 +258,7 @@ app.get("/api/schedule", async (c) => {
     ]);
 
     return c.json({ courts: [court1, court2], weekOffset });
-  } catch (e) {}
+  } catch (_e) {}
 });
 
 // ── POST /api/book ────────────────────────────────────────────────────────────
@@ -408,9 +408,6 @@ app.post("/api/bulk-book", async (c) => {
     failed: [],
   };
 
-  const requestId = Math.random().toString(36).slice(2, 10);
-  const startMs = Date.now();
-
   // Build ourUsers map for pre-check
   const accounts = listAccounts(db);
   const ourUsers = new Map<string, string>();
@@ -431,8 +428,6 @@ app.post("/api/bulk-book", async (c) => {
     await withBookingLock(accountId, async () => {
       for (const booking of accountBookings) {
         const { courtId, date, dayIndex, turno, hora, semana } = booking;
-        const slotKey = `${date}-${courtId}-${turno}-${hora}`;
-        const ts = new Date().toISOString();
 
         const stored = getStoredAccount(db, accountId);
         if (!stored) {
@@ -489,8 +484,7 @@ app.post("/api/bulk-book", async (c) => {
             });
             continue;
           }
-        } catch (e) {
-        }
+        } catch (_e) {}
 
         // If forceCancel is true, first cancel any existing booking for this slot
         if (forceCancel) {
@@ -563,8 +557,6 @@ app.post("/api/bulk-book", async (c) => {
     });
   }
 
-  const elapsed = Date.now() - startMs;
-
   return c.json(result);
 });
 
@@ -594,7 +586,7 @@ interface BookingWithAccount {
   courtId: number;
   date: string;
   time: string;
-  gnome: string;
+  nome: string;
 }
 
 async function fetchAllBookings(
@@ -625,7 +617,7 @@ async function fetchAllBookings(
           courtId,
           date: current.date,
           time: current.time,
-          gnome: current.gnome,
+          nome: current.nome,
         };
       }),
     ),
@@ -688,7 +680,7 @@ app.get("/api/bookings/export", async (c) => {
       'attachment; filename="riotinto-bookings.ics"',
     );
     return c.body(icsContent);
-  } catch (e) {
+  } catch (_e) {
     return c.json({ error: "Failed to generate calendar file" }, 500);
   }
 });

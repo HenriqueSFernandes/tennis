@@ -474,87 +474,191 @@ export function BulkBookModal({
           )}
 
           {step === "results" && result && (
-            <div className="p-6 space-y-4">
-              {/* Success */}
-              {result.success.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <CheckIcon className="w-5 h-5" />
-                    <span className="text-sm font-medium">
-                      {result.success.length} reserva(s) com sucesso
-                    </span>
+            <div className="p-6 space-y-6 fade-in">
+              {/* Summary Card */}
+              <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
+                <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-4">
+                  Resumo
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2">
+                      <CheckIcon className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-400">
+                      {result.success.length}
+                    </div>
+                    <div className="text-xs text-slate-500">Com sucesso</div>
                   </div>
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 space-y-1">
-                    {result.success.map((s) => {
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-2">
+                      <AlertIcon className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-amber-400">
+                      {result.skipped.length}
+                    </div>
+                    <div className="text-xs text-slate-500">Ignoradas</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-2">
+                      <CloseIcon className="w-6 h-6 text-rose-400" />
+                    </div>
+                    <div className="text-2xl font-bold text-rose-400">
+                      {result.failed.length}
+                    </div>
+                    <div className="text-xs text-slate-500">Falharam</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Success Section */}
+              {result.success.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-emerald-400 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
+                    <CheckIcon className="w-4 h-4" />
+                    Reservados com sucesso
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {result.success.map((s, _index) => {
                       const slot = selectedSlots.find(
                         (sel) =>
                           sel.courtId === s.courtId &&
                           sel.date === s.date &&
                           sel.weekOffset === (s.semana ?? s.dayIndex),
                       );
+                      const accountName = slot
+                        ? getAccountName(slot.accountId)
+                        : (accounts.find((a) => a.id === s.accountId)
+                            ?.displayName ?? "Conta");
+                      const label = slot
+                        ? getSlotLabel(slot)
+                        : `${DAY_NAMES[s.dayIndex]} ${s.courtId === 1 ? "Campo 1" : "Campo 2"}`;
+
                       return (
-                        <p
-                          key={`${s.date}-${s.courtId}`}
-                          className="text-emerald-300 text-xs"
+                        <div
+                          key={`${s.date}-${s.courtId}-${s.accountId}`}
+                          className="bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 transition-all duration-200 flex items-center gap-3"
                         >
-                          •{" "}
-                          {slot
-                            ? getSlotLabel(slot)
-                            : `${s.courtId} - ${s.date}`}
-                        </p>
+                          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <CheckIcon className="w-5 h-5 text-emerald-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate">
+                              {label}
+                            </div>
+                            <div className="text-emerald-400/70 text-xs">
+                              {accountName}
+                            </div>
+                          </div>
+                          <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium shrink-0">
+                            Confirmado
+                          </span>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               )}
 
-              {/* Skipped */}
+              {/* Skipped Section */}
               {result.skipped.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-amber-400">
-                    <AlertIcon className="w-5 h-5" />
-                    <span className="text-sm font-medium">
-                      {result.skipped.length} ignorada(s)
-                    </span>
-                  </div>
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 space-y-1">
-                    {result.skipped.map((s) => (
-                      <p
-                        key={`${s.date}-${s.courtId}-${s.reason}`}
-                        className="text-amber-300 text-xs"
-                      >
-                        • {s.date} -{" "}
-                        {s.reason === "already-booked-by-us"
+                <div className="space-y-3">
+                  <h3 className="text-amber-400 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
+                    <AlertIcon className="w-4 h-4" />
+                    Não reservados
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {result.skipped.map((s, _index) => {
+                      const slot = selectedSlots.find(
+                        (sel) =>
+                          sel.courtId === s.courtId && sel.date === s.date,
+                      );
+                      const accountName = slot
+                        ? getAccountName(slot.accountId)
+                        : (accounts.find((a) => a.id === s.accountId)
+                            ?.displayName ?? "Conta");
+                      const label = slot
+                        ? getSlotLabel(slot)
+                        : `Campo ${s.courtId} - ${s.date}`;
+
+                      const reasonText =
+                        s.reason === "already-booked-by-us"
                           ? "Já reservado"
                           : s.reason === "booked-by-others"
-                            ? "Ocupado por outro"
+                            ? "Ocupado"
                             : s.reason === "past"
                               ? "Já passou"
-                              : "Recusado"}
-                      </p>
-                    ))}
+                              : "Recusado";
+
+                      return (
+                        <div
+                          key={`${s.date}-${s.courtId}-${s.accountId}-${s.reason}`}
+                          className="bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 transition-all duration-200 flex items-center gap-3"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                            <AlertIcon className="w-5 h-5 text-amber-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate">
+                              {label}
+                            </div>
+                            <div className="text-amber-400/70 text-xs">
+                              {accountName}
+                            </div>
+                          </div>
+                          <span className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium shrink-0">
+                            {reasonText}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Failed */}
+              {/* Failed Section */}
               {result.failed.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-rose-400">
-                    <CloseIcon className="w-5 h-5" />
-                    <span className="text-sm font-medium">
-                      {result.failed.length} falhou(falharam)
-                    </span>
-                  </div>
-                  <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3 space-y-1">
-                    {result.failed.map((s) => (
-                      <p
-                        key={`${s.date}-${s.courtId}-${s.error}`}
-                        className="text-rose-300 text-xs"
-                      >
-                        • {s.date} - {s.error}
-                      </p>
-                    ))}
+                <div className="space-y-3">
+                  <h3 className="text-rose-400 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
+                    <CloseIcon className="w-4 h-4" />
+                    Erros
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {result.failed.map((s, _index) => {
+                      const slot = selectedSlots.find(
+                        (sel) =>
+                          sel.courtId === s.courtId && sel.date === s.date,
+                      );
+                      const accountName = slot
+                        ? getAccountName(slot.accountId)
+                        : (accounts.find((a) => a.id === s.accountId)
+                            ?.displayName ?? "Conta");
+                      const label = slot
+                        ? getSlotLabel(slot)
+                        : `Campo ${s.courtId} - ${s.date}`;
+
+                      return (
+                        <div
+                          key={`${s.date}-${s.courtId}-${s.accountId}`}
+                          className="bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 transition-all duration-200 flex items-start gap-3"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <CloseIcon className="w-5 h-5 text-rose-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate">
+                              {label}
+                            </div>
+                            <div className="text-rose-400/70 text-xs">
+                              {accountName}
+                            </div>
+                            <div className="text-rose-400/50 text-xs mt-1 italic">
+                              {s.error}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

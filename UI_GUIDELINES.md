@@ -308,6 +308,67 @@ Primary responsive pattern:
 <span className="hidden sm:inline">Desktop only text</span>
 ```
 
+## Result Cards & Lists
+
+### Summary Card
+```tsx
+<div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
+  <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-4">
+    Resumo
+  </h3>
+  <div className="grid grid-cols-3 gap-4">
+    {/* Success stat */}
+    <div className="text-center">
+      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2">
+        <CheckIcon className="w-6 h-6 text-emerald-400" />
+      </div>
+      <div className="text-2xl font-bold text-emerald-400">{count}</div>
+      <div className="text-xs text-slate-500">Label</div>
+    </div>
+    {/* Repeat for other stats */}
+  </div>
+</div>
+```
+
+### Result Item Card
+```tsx
+// Success result
+<div className="bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 transition-all duration-200 flex items-center gap-3">
+  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+    <CheckIcon className="w-5 h-5 text-emerald-400" />
+  </div>
+  <div className="flex-1 min-w-0">
+    <div className="text-white text-sm font-medium truncate">{label}</div>
+    <div className="text-emerald-400/70 text-xs">{subtitle}</div>
+  </div>
+  <span className="px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium shrink-0">
+    Status
+  </span>
+</div>
+
+// Warning/Skipped result
+<div className="bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 transition-all duration-200 flex items-center gap-3">
+  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+    <AlertIcon className="w-5 h-5 text-amber-400" />
+  </div>
+  {/* ... */}
+</div>
+
+// Error result (with error message)
+<div className="bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 transition-all duration-200 flex items-start gap-3">
+  <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0 mt-0.5">
+    <CloseIcon className="w-5 h-5 text-rose-400" />
+  </div>
+  <div className="flex-1 min-w-0">
+    <div className="text-white text-sm font-medium truncate">{label}</div>
+    <div className="text-rose-400/70 text-xs">{subtitle}</div>
+    <div className="text-rose-400/50 text-xs mt-1 italic">
+      {errorMessage}
+    </div>
+  </div>
+</div>
+```
+
 ## Best Practices
 
 1. **Always use transition classes**: `transition-all duration-200` on interactive elements
@@ -320,3 +381,5 @@ Primary responsive pattern:
 8. **Shadows**: Use `shadow-lg shadow-emerald-500/20` on primary buttons
 9. **Opacity**: Use `/50` for borders, `/10` for subtle backgrounds, `/20` for medium
 10. **Truncate**: Use `truncate` on text that might overflow, with `min-w-0` on parent
+11. **Flex layouts**: Use `min-w-0` on text containers in flex layouts to enable truncation
+12. **Status badges**: Use pill-shaped badges with matching status colors (emerald/amber/rose)

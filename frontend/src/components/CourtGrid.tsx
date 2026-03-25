@@ -369,7 +369,7 @@ function ClockIcon({ className }: { className?: string }) {
   );
 }
 
-function CheckIcon({ className }: { className?: string }) {
+function _CheckIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
