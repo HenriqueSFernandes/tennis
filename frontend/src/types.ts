@@ -75,3 +75,32 @@ export interface CancelRequest {
   hora: number;
   semana: number;
 }
+
+export interface Favorite {
+  id: string;
+  accountId: string;
+  courtId: number;
+  dayOfWeek: number; // 0=Mon ... 6=Sun
+  time: string; // "HH:MM"
+  name: string | null;
+  createdAt: string;
+}
+
+export interface AddFavoriteRequest {
+  accountId: string;
+  courtId: number;
+  dayOfWeek: number;
+  time: string;
+  name?: string;
+}
+
+export interface UpdateFavoriteRequest {
+  name: string;
+}
+
+export interface FavoriteWithAvailability extends Favorite {
+  isAvailable: boolean;
+  isBookedByOthers: boolean;
+  isOurBooking: boolean;
+  nextDate: string; // "DD-MM-YYYY"
+}

@@ -117,9 +117,33 @@ export interface BookRequest {
 export interface CancelRequest {
   accountId: string;
   courtId: number;
-  date: string; // "DD-MM-YYYY"
+  date: string;
   dayIndex: number;
   turno: number;
   hora: number;
   semana: number;
+}
+
+// ── Favorites ──────────────────────────────────────────────────────────────────
+
+export interface Favorite {
+  id: string;
+  accountId: string;
+  courtId: number;
+  dayOfWeek: number; // 0=Mon ... 6=Sun
+  time: string; // "HH:MM"
+  name: string | null;
+  createdAt: string;
+}
+
+export interface AddFavoriteRequest {
+  accountId: string;
+  courtId: number;
+  dayOfWeek: number;
+  time: string;
+  name?: string;
+}
+
+export interface UpdateFavoriteRequest {
+  name: string;
 }

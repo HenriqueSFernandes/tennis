@@ -1,19 +1,57 @@
-import type { AccountSummary, CourtSchedule, ScheduleSlot } from "../types";
+import type {
+  AccountSummary,
+  CourtSchedule,
+  Favorite,
+  ScheduleSlot,
+} from "../types";
 
 const DAY_SHORT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 interface CourtGridProps {
   schedule: CourtSchedule;
   accounts: AccountSummary[];
+  favorites?: Favorite[];
   onSlotClick: (slot: ScheduleSlot, courtId: number) => void;
+  onToggleFavorite?: (
+    slot: ScheduleSlot,
+    courtId: number,
+    isFavorited: boolean,
+  ) => void;
 }
 
-export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
+export function CourtGrid({
+  schedule,
+  accounts,
+  favorites = [],
+  onSlotClick,
+  onToggleFavorite,
+}: CourtGridProps) {
   const times = Array.from(new Set(schedule.slots.map((s) => s.time))).sort();
 
   const slotMap = new Map<string, ScheduleSlot>();
   for (const slot of schedule.slots) {
     slotMap.set(`${slot.dayIndex}-${slot.time}`, slot);
+  }
+
+  const favoriteMap = new Map<string, Favorite>();
+  for (const fav of favorites) {
+    favoriteMap.set(`${fav.dayOfWeek}-${fav.time}-${fav.courtId}`, fav);
+  }
+
+  function isSlotFavorited(
+    dayIndex: number,
+    time: string,
+    courtId: number,
+  ): boolean {
+    return favoriteMap.has(`${dayIndex}-${time}-${courtId}`);
+  }
+
+  function getFavoriteForSlot(
+    dayIndex: number,
+    time: string,
+    courtId: number,
+  ): Favorite | undefined {
+    return favoriteMap.get(`${dayIndex}-${time}-${courtId}`);
   }
 
   function isPastDate(date: string): boolean {
@@ -40,13 +78,20 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
     return accounts.find((a) => a.id === accountId)?.displayName ?? "?";
   }
 
-  function slotClass(slot: ScheduleSlot | undefined, dayIndex: number): string {
+  function slotClass(
+    slot: ScheduleSlot | undefined,
+    dayIndex: number,
+    courtId: number,
+  ): string {
     const past = isPastDate(schedule.weekDates[dayIndex] ?? "");
+    const favorited = slot && isSlotFavorited(dayIndex, slot.time, courtId);
     const base =
       "rounded-lg text-xs text-center transition-all duration-200 select-none relative overflow-hidden";
 
     if (!slot) return `${base} bg-transparent`;
     if (past) return `${base} bg-slate-800/50 text-slate-600`;
+    if (favorited && !slot.bookedBy && !slot.isOurs)
+      return `${base} bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer border-2 border-amber-500/50 btn-press`;
     if (slot.isOurs)
       return `${base} bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-900/20 cursor-pointer btn-press`;
     if (slot.bookedBy)
@@ -132,17 +177,37 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
                   const past = isPastDate(date ?? "");
                   const clickable =
                     slot && !past && (slot.isOurs || !slot.bookedBy);
+                  const favorited =
+                    slot &&
+                    isSlotFavorited(dayIdx, slot.time, schedule.courtId);
+                  const _favorite = slot
+                    ? getFavoriteForSlot(dayIdx, slot.time, schedule.courtId)
+                    : undefined;
+
+                  function handleFavoriteClick(e: React.MouseEvent) {
+                    e.stopPropagation();
+                    if (onToggleFavorite && slot) {
+                      onToggleFavorite(
+                        slot,
+                        schedule.courtId,
+                        favorited ?? false,
+                      );
+                    }
+                  }
 
                   return (
-                    <td key={`${date}-${time}`} className="px-1 py-1">
+                    <td
+                      key={`${date}-${time}`}
+                      className="px-1 py-1 relative group"
+                    >
                       <div
-                        className={`${slotClass(slot, dayIdx)} py-2.5 px-1 min-h-[38px] flex items-center justify-center`}
+                        className={`${slotClass(slot, dayIdx, schedule.courtId)} py-2.5 px-1 min-h-[38px] flex items-center justify-center`}
                         onClick={() =>
                           clickable &&
                           slot &&
                           onSlotClick(slot, schedule.courtId)
                         }
-                        title={getSlotTooltip(slot, past)}
+                        title={getSlotTooltip(slot, past, favorited)}
                       >
                         {slot?.isOurs ? (
                           <div className="flex flex-col items-center gap-0.5">
@@ -156,9 +221,7 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
                             </span>
                           </div>
                         ) : slot?.bookedBy ? (
-                          <div className="flex items-center justify-center">
-                            <span className="w-2 h-2 rounded-full bg-rose-400/60" />
-                          </div>
+                          <span className="w-2 h-2 rounded-full bg-rose-400/60" />
                         ) : slot ? (
                           past ? (
                             <span className="text-slate-600">—</span>
@@ -167,6 +230,30 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
                           )
                         ) : null}
                       </div>
+                      {!past && slot && onToggleFavorite && (
+                        <button
+                          className={`absolute top-0.5 right-0.5 p-0.5 rounded transition-opacity ${
+                            favorited
+                              ? "opacity-100"
+                              : "opacity-0 group-hover:opacity-100"
+                          } hover:bg-slate-600`}
+                          onClick={handleFavoriteClick}
+                          title={
+                            favorited
+                              ? "Remover dos favoritos"
+                              : "Adicionar aos favoritos"
+                          }
+                        >
+                          <StarIcon
+                            className={`w-3 h-3 ${
+                              favorited
+                                ? "text-amber-400"
+                                : "text-slate-400 hover:text-amber-400"
+                            }`}
+                            filled={favorited}
+                          />
+                        </button>
+                      )}
                     </td>
                   );
                 })}
@@ -187,6 +274,11 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
           />
           <LegendItem color="bg-slate-700" label="Livre" />
           <LegendItem color="bg-slate-800/50" label="Passado" />
+          <LegendItem
+            color="bg-slate-700"
+            borderColor="border-amber-500/50"
+            label="Favorito"
+          />
         </div>
       </div>
     </div>
@@ -195,6 +287,7 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
   function getSlotTooltip(
     slot: ScheduleSlot | undefined,
     past: boolean,
+    favorited?: boolean,
   ): string {
     if (!slot || past) return "";
     if (slot.isOurs) {
@@ -202,6 +295,9 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
     }
     if (slot.bookedBy) {
       return `Reservado por ${slot.bookedByName ?? slot.bookedBy}`;
+    }
+    if (favorited) {
+      return "Favorite - Clique para reservar";
     }
     return "Clique para reservar";
   }
@@ -212,14 +308,15 @@ export function CourtGrid({ schedule, accounts, onSlotClick }: CourtGridProps) {
 interface LegendItemProps {
   color: string;
   dotColor?: string;
+  borderColor?: string;
   label: string;
 }
 
-function LegendItem({ color, dotColor, label }: LegendItemProps) {
+function LegendItem({ color, dotColor, borderColor, label }: LegendItemProps) {
   return (
     <span className="flex items-center gap-1.5 text-slate-400">
       <span
-        className={`w-3 h-3 rounded ${color} flex items-center justify-center`}
+        className={`w-3 h-3 rounded ${color} flex items-center justify-center ${borderColor ?? ""}`}
       >
         {dotColor && (
           <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
@@ -293,6 +390,33 @@ function PlusIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M12 4v16m8-8H4"
+      />
+    </svg>
+  );
+}
+
+function StarIcon({
+  className,
+  filled,
+  onClick,
+}: {
+  className?: string;
+  filled?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <svg
+      className={className}
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      onClick={onClick}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
       />
     </svg>
   );
