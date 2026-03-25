@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ScheduleSlot, AccountSummary } from '../types';
 
 interface BookingModalProps {
@@ -15,6 +16,13 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
   const [selectedAccount, setSelectedAccount] = useState(accounts[0]?.id ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, []);
 
   async function handleConfirm() {
     if (!selectedAccount) return;
@@ -34,7 +42,7 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
 
   const selectedAccountData = accounts.find(a => a.id === selectedAccount);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
@@ -159,7 +167,8 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -177,6 +186,13 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, []);
+
   async function handleConfirm() {
     setError('');
     setLoading(true);
@@ -191,10 +207,10 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
   const [dd, mm, yyyy] = slot.date.split('-');
   const dateStr = `${dd}/${mm}/${yyyy}`;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={!loading ? onCancel : undefined}
       />
 
@@ -230,7 +246,7 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
         {/* Warning Message */}
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">
           <p className="text-rose-200 text-sm">
-            Tem a certeza que deseja cancelar esta reserva? 
+            Tem a certeza que deseja cancelar esta reserva?
             <span className="block mt-1 text-rose-300/70 text-xs">
               Esta ação não pode ser desfeita.
             </span>
@@ -273,7 +289,8 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
