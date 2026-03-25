@@ -277,7 +277,15 @@ export async function getCourtSchedule(
 
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + weekOffset * 7);
-  const isoDate = targetDate.toISOString().slice(0, 10);
+
+  // Calculate Monday of the target week for API query
+  // (riotinto.pt returns data for a range centered on the query date,
+  // so we query with Monday to get data for Mon-Sun week)
+  const queryDow = targetDate.getDay();
+  const queryMondayOffset = queryDow === 0 ? -6 : 1 - queryDow;
+  const queryMonday = new Date(targetDate);
+  queryMonday.setDate(targetDate.getDate() + queryMondayOffset);
+  const isoDate = queryMonday.toISOString().slice(0, 10);
 
   const dadosRaw = (await jsonpPost(
     "/index.php?option=com_agenda&task=ajax.getDadosLocal&format=json",
