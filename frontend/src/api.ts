@@ -3,6 +3,8 @@ import type {
   AddAccountRequest,
   AddFavoriteRequest,
   BookRequest,
+  BulkBookRequest,
+  BulkBookResult,
   CancelRequest,
   CurrentBookingInfo,
   Favorite,
@@ -196,6 +198,16 @@ export async function deleteFavorite(
 ): Promise<void> {
   await request<{ ok: boolean }>(`/favorites/${id}`, password, {
     method: "DELETE",
+  });
+}
+
+export async function bulkBook(
+  password: string,
+  data: BulkBookRequest,
+): Promise<BulkBookResult> {
+  return request<BulkBookResult>("/bulk-book", password, {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 }
 

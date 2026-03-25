@@ -29,6 +29,8 @@ import type {
   AddAccountRequest,
   AddFavoriteRequest,
   BookRequest,
+  BulkBookRequest,
+  BulkBookResult,
   CancelRequest,
   UpdateAccountRequest,
   UpdateFavoriteRequest,
@@ -37,6 +39,26 @@ import type {
 const db = openDb();
 
 const app = new Hono();
+
+// ── Per-account booking mutex ──────────────────────────────────────────────────
+const bookingLocks = new Map<string, Promise<unknown>>();
+
+async function withBookingLock<T>(
+  accountId: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const current = bookingLocks.get(accountId);
+  const lock = (async () => {
+    if (current) await current;
+    try {
+      return await fn();
+    } finally {
+      bookingLocks.delete(accountId);
+    }
+  })();
+  bookingLocks.set(accountId, lock);
+  return lock as Promise<T>;
+}
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = ["https://tennis.henriquesf.me"];
@@ -236,10 +258,7 @@ app.get("/api/schedule", async (c) => {
     ]);
 
     return c.json({ courts: [court1, court2], weekOffset });
-  } catch (e) {
-    console.error("[schedule] fetch failed:", e);
-    return c.json({ courts: [], weekOffset });
-  }
+  } catch (_e) {}
 });
 
 // ── POST /api/book ────────────────────────────────────────────────────────────
@@ -377,6 +396,170 @@ app.delete("/api/favorites/:id", async (c) => {
   return c.json({ ok: true });
 });
 
+// ── POST /api/bulk-book ─────────────────────────────────────────────────────────
+app.post("/api/bulk-book", async (c) => {
+  const body = await c.req.json<BulkBookRequest>();
+  const { bookings, forceCancel } = body;
+  const appPassword = process.env["APP_PASSWORD"]!;
+
+  const result: BulkBookResult = {
+    success: [],
+    skipped: [],
+    failed: [],
+  };
+
+  // Build ourUsers map for pre-check
+  const accounts = listAccounts(db);
+  const ourUsers = new Map<string, string>();
+  for (const acc of accounts) {
+    const siteUserId = getSiteUserId(db, acc.id);
+    if (siteUserId && siteUserId !== "0") ourUsers.set(siteUserId, acc.id);
+  }
+
+  // Group bookings by accountId for mutex
+  const byAccount = new Map<string, typeof bookings>();
+  for (const booking of bookings) {
+    const existing = byAccount.get(booking.accountId) ?? [];
+    existing.push(booking);
+    byAccount.set(booking.accountId, existing);
+  }
+
+  for (const [accountId, accountBookings] of byAccount) {
+    await withBookingLock(accountId, async () => {
+      for (const booking of accountBookings) {
+        const { courtId, date, dayIndex, turno, hora, semana } = booking;
+
+        const stored = getStoredAccount(db, accountId);
+        if (!stored) {
+          result.failed.push({
+            accountId,
+            courtId,
+            date,
+            error: "Account not found",
+          });
+          continue;
+        }
+
+        const pwd = await getDecryptedPassword(db, accountId, appPassword);
+        if (!pwd) {
+          result.failed.push({
+            accountId,
+            courtId,
+            date,
+            error: "Could not decrypt credentials",
+          });
+          continue;
+        }
+
+        // Check if slot is in the past
+        const [dd, mm, yyyy] = date.split("-").map(Number);
+        const slotDate = new Date(yyyy!, mm! - 1, dd!);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (slotDate < today) {
+          result.skipped.push({ accountId, courtId, date, reason: "past" });
+          continue;
+        }
+
+        // Pre-check availability
+        try {
+          const schedule = await getCourtSchedule(
+            db,
+            stored.id,
+            stored.username,
+            pwd,
+            courtId,
+            semana,
+            ourUsers,
+          );
+          const slot = schedule.slots.find(
+            (s) => s.date === date && s.turno === turno && s.hora === hora,
+          );
+          if (slot?.bookedBy && !slot.isOurs) {
+            result.skipped.push({
+              accountId,
+              courtId,
+              date,
+              reason: "booked-by-others",
+            });
+            continue;
+          }
+        } catch (_e) {}
+
+        // If forceCancel is true, first cancel any existing booking for this slot
+        if (forceCancel) {
+          await cancelBooking(
+            db,
+            accountId,
+            stored.username,
+            pwd,
+            stored.displayName,
+            stored.phone,
+            courtId,
+            date,
+            dayIndex,
+            turno,
+            hora,
+            semana,
+          );
+        }
+
+        // Make the booking
+        const bookResult = await makeBooking(
+          db,
+          accountId,
+          stored.username,
+          pwd,
+          stored.displayName,
+          stored.phone,
+          courtId,
+          date,
+          dayIndex,
+          turno,
+          hora,
+          semana,
+        );
+
+        if (!bookResult.success) {
+          const errorMsg = bookResult.message ?? "";
+          if (
+            (errorMsg.includes("já") && errorMsg.includes("reservado")) ||
+            errorMsg.includes("ocupado")
+          ) {
+            result.skipped.push({
+              accountId,
+              courtId,
+              date,
+              reason: forceCancel
+                ? "force-cancel-declined"
+                : "booked-by-others",
+            });
+          } else {
+            result.failed.push({
+              accountId,
+              courtId,
+              date,
+              error: errorMsg || "Booking failed",
+            });
+          }
+          continue;
+        }
+
+        result.success.push({
+          accountId,
+          courtId,
+          date,
+          dayIndex,
+          turno,
+          hora,
+        });
+      }
+    });
+  }
+
+  return c.json(result);
+});
+
 // ── Helper functions for iCal export ──────────────────────────────────────────
 
 function parseDateTime(dateStr: string, timeStr: string): Date {
@@ -497,8 +680,7 @@ app.get("/api/bookings/export", async (c) => {
       'attachment; filename="riotinto-bookings.ics"',
     );
     return c.body(icsContent);
-  } catch (e) {
-    console.error("[export] error generating ICS:", e);
+  } catch (_e) {
     return c.json({ error: "Failed to generate calendar file" }, 500);
   }
 });

@@ -112,3 +112,64 @@ export interface FavoriteWithAvailability extends Favorite {
   nextWeek: WeekAvailability;
   nextDate: string; // "DD-MM-YYYY" - the earlier of the two dates for sorting
 }
+
+// ── Bulk Book ─────────────────────────────────────────────────────────────────
+
+export interface BulkBookItem {
+  accountId: string;
+  courtId: number;
+  date: string; // "DD-MM-YYYY"
+  dayIndex: number;
+  turno: number;
+  hora: number;
+  semana: number;
+}
+
+export interface BulkBookRequest {
+  bookings: BulkBookItem[];
+  forceCancel: boolean;
+}
+
+export interface BulkBookResult {
+  success: {
+    accountId: string;
+    courtId: number;
+    date: string;
+    dayIndex: number;
+    turno: number;
+    hora: number;
+    semana?: number;
+  }[];
+  skipped: {
+    accountId: string;
+    courtId: number;
+    date: string;
+    reason:
+      | "already-booked-by-us"
+      | "booked-by-others"
+      | "past"
+      | "force-cancel-declined";
+  }[];
+  failed: {
+    accountId: string;
+    courtId: number;
+    date: string;
+    error: string;
+  }[];
+}
+
+export interface BulkBookSelection {
+  favoriteId: string;
+  weekOffset: number;
+  accountId: string;
+  courtId: number;
+  dayOfWeek: number;
+  time: string;
+  date: string;
+  dayIndex: number;
+  turno: number;
+  hora: number;
+  isAvailable: boolean;
+  isConflict: boolean;
+  conflictReason?: string;
+}

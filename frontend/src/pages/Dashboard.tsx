@@ -7,6 +7,7 @@ import {
   getFavorites,
   updateFavorite,
 } from "../api";
+import { BulkBookModal } from "../components/BulkBookModal";
 import { FavoritesSection } from "../components/FavoritesSection";
 import { useDataCache } from "../DataCacheContext";
 import type {
@@ -50,6 +51,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [showBulkBookModal, setShowBulkBookModal] = useState(false);
 
   async function loadData() {
     if (!password) return;
@@ -326,6 +328,7 @@ export function Dashboard() {
           courtId: fav.courtId,
           dayOfWeek: fav.dayOfWeek,
           time: fav.time,
+          accountId: fav.accountId,
         },
       },
     });
@@ -581,6 +584,21 @@ export function Dashboard() {
           onBookFavorite={handleBookFavorite}
           onDeleteFavorite={handleDeleteFavorite}
           onUpdateFavoriteName={handleUpdateFavoriteName}
+          onOpenBulkBook={() => setShowBulkBookModal(true)}
+        />
+      )}
+
+      {/* Bulk Book Modal */}
+      {showBulkBookModal && password && (
+        <BulkBookModal
+          password={password}
+          favorites={computeFavoritesWithAvailability()}
+          accounts={accounts}
+          onClose={() => setShowBulkBookModal(false)}
+          onSuccess={() => {
+            refresh();
+            loadData();
+          }}
         />
       )}
     </div>
