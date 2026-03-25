@@ -5,13 +5,18 @@ import "dotenv/config";
 import * as ics from "ics";
 import {
   addAccount,
+  addFavorite,
   deleteAccount,
+  deleteFavorite,
   getDecryptedPassword,
   getSiteUserId,
   getStoredAccount,
+  isFavorite,
   listAccounts,
+  listFavorites,
   openDb,
   updateAccount,
+  updateFavorite,
 } from "./db.js";
 import {
   cancelBooking,
@@ -22,9 +27,11 @@ import {
 } from "./riotintoClient.js";
 import type {
   AddAccountRequest,
+  AddFavoriteRequest,
   BookRequest,
   CancelRequest,
   UpdateAccountRequest,
+  UpdateFavoriteRequest,
 } from "./types.js";
 
 const db = openDb();
@@ -298,6 +305,75 @@ app.delete("/api/book", async (c) => {
   if (!result.success) {
     return c.json({ error: result.message ?? "Cancel failed" }, 400);
   }
+  return c.json({ ok: true });
+});
+
+// ── GET /api/favorites ────────────────────────────────────────────────────────
+app.get("/api/favorites", async (c) => {
+  const accountId = c.req.query("accountId");
+  const favorites = listFavorites(db, accountId ?? undefined);
+  return c.json(favorites);
+});
+
+// ── POST /api/favorites ───────────────────────────────────────────────────────
+app.post("/api/favorites", async (c) => {
+  const body = await c.req.json<AddFavoriteRequest>();
+  const { accountId, courtId, dayOfWeek, time, name } = body;
+
+  if (!accountId || courtId === undefined || dayOfWeek === undefined || !time) {
+    return c.json(
+      {
+        error: "Missing required fields: accountId, courtId, dayOfWeek, time",
+      },
+      400,
+    );
+  }
+
+  if (dayOfWeek < 0 || dayOfWeek > 6) {
+    return c.json({ error: "dayOfWeek must be between 0 and 6" }, 400);
+  }
+
+  const stored = getStoredAccount(db, accountId);
+  if (!stored) return c.json({ error: "Account not found" }, 404);
+
+  const existing = isFavorite(db, accountId, courtId, dayOfWeek, time);
+  if (existing) {
+    return c.json({ error: "Favorite already exists" }, 409);
+  }
+
+  const favorite = addFavorite(db, {
+    accountId,
+    courtId,
+    dayOfWeek,
+    time,
+    name,
+  });
+  return c.json(favorite, 201);
+});
+
+// ── PUT /api/favorites/:id ───────────────────────────────────────────────────
+app.put("/api/favorites/:id", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json<UpdateFavoriteRequest>();
+  const { name } = body;
+
+  if (!name) {
+    return c.json({ error: "Missing required field: name" }, 400);
+  }
+
+  const updated = updateFavorite(db, id, name);
+  if (!updated) return c.json({ error: "Favorite not found" }, 404);
+
+  const favorites = listFavorites(db);
+  const favorite = favorites.find((f) => f.id === id);
+  return c.json(favorite);
+});
+
+// ── DELETE /api/favorites/:id ─────────────────────────────────────────────────
+app.delete("/api/favorites/:id", async (c) => {
+  const id = c.req.param("id");
+  const deleted = deleteFavorite(db, id);
+  if (!deleted) return c.json({ error: "Favorite not found" }, 404);
   return c.json({ ok: true });
 });
 

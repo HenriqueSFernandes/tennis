@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import { exportBookings } from "../api";
+import {
+  deleteFavorite,
+  exportBookings,
+  getFavorites,
+  updateFavorite,
+} from "../api";
+import { FavoritesSection } from "../components/FavoritesSection";
 import { useDataCache } from "../DataCacheContext";
-import type { AccountSummary, CurrentBookingInfo } from "../types";
+import type {
+  AccountSummary,
+  CurrentBookingInfo,
+  Favorite,
+  FavoriteWithAvailability,
+} from "../types";
 
 const _DAY_NAMES = [
   "Segunda",
@@ -17,9 +28,25 @@ const _DAY_NAMES = [
 
 export function Dashboard() {
   const { password } = useAuth();
+  const navigate = useNavigate();
   const { getSchedule, getAccounts, refresh, staleKeys } = useDataCache();
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [schedules, setSchedules] = useState<
+    {
+      weekOffset: number;
+      courts: {
+        courtId: number;
+        slots: {
+          dayIndex: number;
+          time: string;
+          bookedBy: string | null;
+          isOurs: boolean;
+        }[];
+      }[];
+    }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -29,11 +56,18 @@ export function Dashboard() {
     setLoading(true);
     setError("");
     try {
-      const [s0, s1, s2, a] = await Promise.all([
+      const [s0, s1, s2, a, f] = await Promise.all([
         getSchedule(0),
         getSchedule(1),
         getSchedule(2),
         getAccounts(),
+        getFavorites(password),
+      ]);
+
+      setSchedules([
+        { weekOffset: 0, courts: s0.courts },
+        { weekOffset: 1, courts: s1.courts },
+        { weekOffset: 2, courts: s2.courts },
       ]);
 
       const allSlots = [s0, s1, s2].flatMap((s) =>
@@ -76,6 +110,7 @@ export function Dashboard() {
 
       setBookings(sorted);
       setAccounts(a);
+      setFavorites(f);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar dados");
     } finally {
@@ -112,6 +147,203 @@ export function Dashboard() {
       setExporting(false);
     }
   };
+
+  function computeDateForWeek(weekOffset: number, dayOfWeek: number): string {
+    const today = new Date();
+    const todayDay = today.getDay();
+    const todayMon = todayDay === 0 ? 6 : todayDay - 1; // Convert to Mon=0, Sun=6
+
+    // Find Monday of current week
+    const daysSinceMonday = todayMon;
+    const startOfCurrentWeek = new Date(today);
+    startOfCurrentWeek.setDate(today.getDate() - daysSinceMonday);
+
+    // Go to Monday of target week (offset 0 = this week, offset 1 = next week, etc.)
+    const startOfTargetWeek = new Date(startOfCurrentWeek);
+    startOfTargetWeek.setDate(startOfCurrentWeek.getDate() + weekOffset * 7);
+
+    // Add days to reach target day
+    const targetDate = new Date(startOfTargetWeek);
+    targetDate.setDate(startOfTargetWeek.getDate() + dayOfWeek);
+
+    return `${String(targetDate.getDate()).padStart(2, "0")}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${targetDate.getFullYear()}`;
+  }
+
+  function getWeekAvailability(
+    fav: Favorite,
+    weekOffset: number,
+    dateStr: string,
+  ): {
+    isAvailable: boolean;
+    isBookedByOthers: boolean;
+    isOurBooking: boolean;
+    isPast: boolean;
+  } {
+    // Check if date is in the past
+    const [day, month, year] = dateStr.split("-").map(Number);
+    const slotDate = new Date(year ?? 0, (month ?? 1) - 1, day ?? 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPast = slotDate.getTime() < today.getTime();
+
+    const sched = schedules.find((s) => s.weekOffset === weekOffset);
+    if (!sched) {
+      // No data for this week - if date is in past, mark as past
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+        isPast,
+      };
+    }
+
+    const court = sched.courts.find((c) => c.courtId === fav.courtId);
+    if (!court) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+        isPast,
+      };
+    }
+
+    const slot = court.slots.find(
+      (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
+    );
+    if (!slot) {
+      // Slot not found in schedule - if date is in past, mark as past
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+        isPast,
+      };
+    }
+
+    // If slot date is in the past, it's not available
+    if (isPast) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+        isPast: true,
+      };
+    }
+
+    if (slot.isOurs) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: true,
+        isPast: false,
+      };
+    }
+    if (slot.bookedBy) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: true,
+        isOurBooking: false,
+        isPast: false,
+      };
+    }
+    return {
+      isAvailable: true,
+      isBookedByOthers: false,
+      isOurBooking: false,
+      isPast: false,
+    };
+  }
+
+  function computeFavoritesWithAvailability(): FavoriteWithAvailability[] {
+    const withAvailability = favorites.map((fav) => {
+      const thisWeekDate = computeDateForWeek(0, fav.dayOfWeek);
+      const nextWeekDate = computeDateForWeek(1, fav.dayOfWeek);
+
+      const thisWeekAvail = getWeekAvailability(fav, 0, thisWeekDate);
+      const nextWeekAvail = getWeekAvailability(fav, 1, nextWeekDate);
+
+      // nextDate for sorting: earlier of the two
+      const [aDay, aMonth, aYear] = thisWeekDate.split("-").map(Number);
+      const [bDay, bMonth, bYear] = nextWeekDate.split("-").map(Number);
+      const aDate = new Date(aYear ?? 0, (aMonth ?? 1) - 1, aDay ?? 0);
+      const bDate = new Date(bYear ?? 0, (bMonth ?? 1) - 1, bDay ?? 0);
+      const nextDate = aDate <= bDate ? thisWeekDate : nextWeekDate;
+
+      return {
+        ...fav,
+        thisWeek: {
+          ...thisWeekAvail,
+          weekOffset: 0,
+          date: thisWeekDate,
+        },
+        nextWeek: {
+          ...nextWeekAvail,
+          weekOffset: 1,
+          date: nextWeekDate,
+        },
+        nextDate,
+      };
+    });
+
+    return withAvailability.sort((a, b) => {
+      // Parse nextDate to compare
+      const [aDay, aMonth, aYear] = a.nextDate.split("-").map(Number);
+      const [bDay, bMonth, bYear] = b.nextDate.split("-").map(Number);
+      const aDate = new Date(aYear ?? 0, (aMonth ?? 1) - 1, aDay ?? 0);
+      const bDate = new Date(bYear ?? 0, (bMonth ?? 1) - 1, bDay ?? 0);
+
+      // 1. Sort by date
+      if (aDate.getTime() !== bDate.getTime()) {
+        return aDate.getTime() - bDate.getTime();
+      }
+
+      // 2. Sort by time
+      if (a.time !== b.time) {
+        return a.time.localeCompare(b.time);
+      }
+
+      // 3. Sort by court
+      if (a.courtId !== b.courtId) {
+        return a.courtId - b.courtId;
+      }
+
+      // 4. Sort by account name
+      const aAccount = accounts.find((acc) => acc.id === a.accountId);
+      const bAccount = accounts.find((acc) => acc.id === b.accountId);
+      const aName = aAccount?.displayName ?? "";
+      const bName = bAccount?.displayName ?? "";
+      return aName.localeCompare(bName);
+    });
+  }
+
+  async function handleBookFavorite(
+    fav: FavoriteWithAvailability,
+    weekOffset: number,
+  ) {
+    navigate(`/schedule?week=${weekOffset}`, {
+      state: {
+        preselectedSlot: {
+          courtId: fav.courtId,
+          dayOfWeek: fav.dayOfWeek,
+          time: fav.time,
+        },
+      },
+    });
+  }
+
+  async function handleDeleteFavorite(id: string) {
+    if (!password) return;
+    await deleteFavorite(password, id);
+    const f = await getFavorites(password);
+    setFavorites(f);
+  }
+
+  async function handleUpdateFavoriteName(id: string, name: string) {
+    if (!password) return;
+    await updateFavorite(password, id, { name });
+    const f = await getFavorites(password);
+    setFavorites(f);
+  }
 
   const isDashboardStale =
     staleKeys.has("schedule:0") ||
@@ -337,6 +569,20 @@ export function Dashboard() {
           </div>
         )}
       </section>
+
+      {/* Favorites Section */}
+      {!loading && favorites.length > 0 && (
+        <FavoritesSection
+          favorites={computeFavoritesWithAvailability()}
+          accounts={accounts.map((a) => ({
+            id: a.id,
+            displayName: a.displayName,
+          }))}
+          onBookFavorite={handleBookFavorite}
+          onDeleteFavorite={handleDeleteFavorite}
+          onUpdateFavoriteName={handleUpdateFavoriteName}
+        />
+      )}
     </div>
   );
 }

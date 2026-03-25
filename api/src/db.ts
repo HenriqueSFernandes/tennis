@@ -4,8 +4,10 @@ import Database from "better-sqlite3";
 import { decrypt, encrypt } from "./crypto.js";
 import type {
   AccountSummary,
+  AddFavoriteRequest,
   CachedSession,
   Db,
+  Favorite,
   StoredAccount,
 } from "./types.js";
 
@@ -40,6 +42,18 @@ export function openDb(): Db {
       csrf_token  TEXT NOT NULL,
       user_id     TEXT NOT NULL,
       cached_at   INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS favorites (
+      id           TEXT PRIMARY KEY,
+      account_id   TEXT NOT NULL,
+      court_id     INTEGER NOT NULL,
+      day_of_week  INTEGER NOT NULL,
+      time         TEXT NOT NULL,
+      name         TEXT,
+      created_at   TEXT NOT NULL,
+      FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+      UNIQUE(account_id, court_id, day_of_week, time)
     );
   `);
 
@@ -229,4 +243,134 @@ export function getSiteUserId(db: Db, accountId: string): string | null {
     .prepare("SELECT user_id FROM sessions WHERE account_id = ?")
     .get(accountId) as { user_id: string } | undefined;
   return row?.user_id ?? null;
+}
+
+// ── Favorites ──────────────────────────────────────────────────────────────────
+
+export function listFavorites(db: Db, accountId?: string): Favorite[] {
+  let rows: Array<{
+    id: string;
+    account_id: string;
+    court_id: number;
+    day_of_week: number;
+    time: string;
+    name: string | null;
+    created_at: string;
+  }>;
+
+  if (accountId) {
+    rows = db
+      .prepare(
+        "SELECT id, account_id, court_id, day_of_week, time, name, created_at FROM favorites WHERE account_id = ? ORDER BY court_id ASC, day_of_week ASC, time ASC",
+      )
+      .all(accountId) as Array<{
+      id: string;
+      account_id: string;
+      court_id: number;
+      day_of_week: number;
+      time: string;
+      name: string | null;
+      created_at: string;
+    }>;
+  } else {
+    rows = db
+      .prepare(
+        "SELECT id, account_id, court_id, day_of_week, time, name, created_at FROM favorites ORDER BY court_id ASC, day_of_week ASC, time ASC",
+      )
+      .all() as Array<{
+      id: string;
+      account_id: string;
+      court_id: number;
+      day_of_week: number;
+      time: string;
+      name: string | null;
+      created_at: string;
+    }>;
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    accountId: r.account_id,
+    courtId: r.court_id,
+    dayOfWeek: r.day_of_week,
+    time: r.time,
+    name: r.name,
+    createdAt: r.created_at,
+  }));
+}
+
+export function addFavorite(db: Db, data: AddFavoriteRequest): Favorite {
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  db.prepare(
+    `INSERT INTO favorites (id, account_id, court_id, day_of_week, time, name, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    data.accountId,
+    data.courtId,
+    data.dayOfWeek,
+    data.time,
+    data.name ?? null,
+    createdAt,
+  );
+
+  return {
+    id,
+    accountId: data.accountId,
+    courtId: data.courtId,
+    dayOfWeek: data.dayOfWeek,
+    time: data.time,
+    name: data.name ?? null,
+    createdAt,
+  };
+}
+
+export function updateFavorite(db: Db, id: string, name: string): boolean {
+  const result = db
+    .prepare("UPDATE favorites SET name = ? WHERE id = ?")
+    .run(name, id);
+  return result.changes > 0;
+}
+
+export function deleteFavorite(db: Db, id: string): boolean {
+  const result = db.prepare("DELETE FROM favorites WHERE id = ?").run(id);
+  return result.changes > 0;
+}
+
+export function isFavorite(
+  db: Db,
+  accountId: string,
+  courtId: number,
+  dayOfWeek: number,
+  time: string,
+): Favorite | null {
+  const row = db
+    .prepare(
+      "SELECT id, account_id, court_id, day_of_week, time, name, created_at FROM favorites WHERE account_id = ? AND court_id = ? AND day_of_week = ? AND time = ?",
+    )
+    .get(accountId, courtId, dayOfWeek, time) as
+    | {
+        id: string;
+        account_id: string;
+        court_id: number;
+        day_of_week: number;
+        time: string;
+        name: string | null;
+        created_at: string;
+      }
+    | undefined;
+
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    accountId: row.account_id,
+    courtId: row.court_id,
+    dayOfWeek: row.day_of_week,
+    time: row.time,
+    name: row.name,
+    createdAt: row.created_at,
+  };
 }
