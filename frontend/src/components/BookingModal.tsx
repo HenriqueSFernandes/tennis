@@ -24,6 +24,16 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
     };
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !loading) {
+        onCancel();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [loading, onCancel]);
+
   async function handleConfirm() {
     if (!selectedAccount) return;
     setError('');
@@ -192,6 +202,16 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
       document.body.classList.remove('overflow-hidden');
     };
   }, []);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !loading) {
+        onCancel();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [loading, onCancel]);
 
   async function handleConfirm() {
     setError('');
