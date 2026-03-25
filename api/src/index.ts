@@ -40,6 +40,26 @@ const db = openDb();
 
 const app = new Hono();
 
+// ── Per-account booking mutex ──────────────────────────────────────────────────
+const bookingLocks = new Map<string, Promise<unknown>>();
+
+async function withBookingLock<T>(
+  accountId: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const current = bookingLocks.get(accountId);
+  const lock = (async () => {
+    if (current) await current;
+    try {
+      return await fn();
+    } finally {
+      bookingLocks.delete(accountId);
+    }
+  })();
+  bookingLocks.set(accountId, lock);
+  return lock as Promise<T>;
+}
+
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = ["https://tennis.henriquesf.me"];
 
@@ -238,10 +258,7 @@ app.get("/api/schedule", async (c) => {
     ]);
 
     return c.json({ courts: [court1, court2], weekOffset });
-  } catch (e) {
-    console.error("[schedule] fetch failed:", e);
-    return c.json({ courts: [], weekOffset });
-  }
+  } catch (e) {}
 });
 
 // ── POST /api/book ────────────────────────────────────────────────────────────
@@ -391,113 +408,162 @@ app.post("/api/bulk-book", async (c) => {
     failed: [],
   };
 
+  const requestId = Math.random().toString(36).slice(2, 10);
+  const startMs = Date.now();
+
+  // Build ourUsers map for pre-check
+  const accounts = listAccounts(db);
+  const ourUsers = new Map<string, string>();
+  for (const acc of accounts) {
+    const siteUserId = getSiteUserId(db, acc.id);
+    if (siteUserId && siteUserId !== "0") ourUsers.set(siteUserId, acc.id);
+  }
+
+  // Group bookings by accountId for mutex
+  const byAccount = new Map<string, typeof bookings>();
   for (const booking of bookings) {
-    const { accountId, courtId, date, dayIndex, turno, hora, semana } = booking;
+    const existing = byAccount.get(booking.accountId) ?? [];
+    existing.push(booking);
+    byAccount.set(booking.accountId, existing);
+  }
 
-    const stored = getStoredAccount(db, accountId);
-    if (!stored) {
-      result.failed.push({
-        accountId,
-        courtId,
-        date,
-        error: "Account not found",
-      });
-      continue;
-    }
+  for (const [accountId, accountBookings] of byAccount) {
+    await withBookingLock(accountId, async () => {
+      for (const booking of accountBookings) {
+        const { courtId, date, dayIndex, turno, hora, semana } = booking;
+        const slotKey = `${date}-${courtId}-${turno}-${hora}`;
+        const ts = new Date().toISOString();
 
-    const pwd = await getDecryptedPassword(db, accountId, appPassword);
-    if (!pwd) {
-      result.failed.push({
-        accountId,
-        courtId,
-        date,
-        error: "Could not decrypt credentials",
-      });
-      continue;
-    }
+        const stored = getStoredAccount(db, accountId);
+        if (!stored) {
+          result.failed.push({
+            accountId,
+            courtId,
+            date,
+            error: "Account not found",
+          });
+          continue;
+        }
 
-    // Check if slot is in the past
-    const [dd, mm, yyyy] = date.split("-").map(Number);
-    const slotDate = new Date(yyyy!, mm! - 1, dd!);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (slotDate < today) {
-      result.skipped.push({
-        accountId,
-        courtId,
-        date,
-        reason: "past",
-      });
-      continue;
-    }
+        const pwd = await getDecryptedPassword(db, accountId, appPassword);
+        if (!pwd) {
+          result.failed.push({
+            accountId,
+            courtId,
+            date,
+            error: "Could not decrypt credentials",
+          });
+          continue;
+        }
 
-    // If forceCancel is true, first cancel any existing booking for this slot
-    if (forceCancel) {
-      await cancelBooking(
-        db,
-        accountId,
-        stored.username,
-        pwd,
-        stored.displayName,
-        stored.phone,
-        courtId,
-        date,
-        dayIndex,
-        turno,
-        hora,
-        semana,
-      );
-    }
+        // Check if slot is in the past
+        const [dd, mm, yyyy] = date.split("-").map(Number);
+        const slotDate = new Date(yyyy!, mm! - 1, dd!);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (slotDate < today) {
+          result.skipped.push({ accountId, courtId, date, reason: "past" });
+          continue;
+        }
 
-    // Make the booking
-    const bookResult = await makeBooking(
-      db,
-      accountId,
-      stored.username,
-      pwd,
-      stored.displayName,
-      stored.phone,
-      courtId,
-      date,
-      dayIndex,
-      turno,
-      hora,
-      semana,
-    );
+        // Pre-check availability
+        try {
+          const schedule = await getCourtSchedule(
+            db,
+            stored.id,
+            stored.username,
+            pwd,
+            courtId,
+            semana,
+            ourUsers,
+          );
+          const slot = schedule.slots.find(
+            (s) => s.date === date && s.turno === turno && s.hora === hora,
+          );
+          if (slot?.bookedBy && !slot.isOurs) {
+            result.skipped.push({
+              accountId,
+              courtId,
+              date,
+              reason: "booked-by-others",
+            });
+            continue;
+          }
+        } catch (e) {
+        }
 
-    if (!bookResult.success) {
-      // Check if it was already booked
-      const errorMsg = bookResult.message ?? "";
-      if (
-        (errorMsg.includes("já") && errorMsg.includes("reservado")) ||
-        errorMsg.includes("ocupado")
-      ) {
-        result.skipped.push({
+        // If forceCancel is true, first cancel any existing booking for this slot
+        if (forceCancel) {
+          await cancelBooking(
+            db,
+            accountId,
+            stored.username,
+            pwd,
+            stored.displayName,
+            stored.phone,
+            courtId,
+            date,
+            dayIndex,
+            turno,
+            hora,
+            semana,
+          );
+        }
+
+        // Make the booking
+        const bookResult = await makeBooking(
+          db,
+          accountId,
+          stored.username,
+          pwd,
+          stored.displayName,
+          stored.phone,
+          courtId,
+          date,
+          dayIndex,
+          turno,
+          hora,
+          semana,
+        );
+
+        if (!bookResult.success) {
+          const errorMsg = bookResult.message ?? "";
+          if (
+            (errorMsg.includes("já") && errorMsg.includes("reservado")) ||
+            errorMsg.includes("ocupado")
+          ) {
+            result.skipped.push({
+              accountId,
+              courtId,
+              date,
+              reason: forceCancel
+                ? "force-cancel-declined"
+                : "booked-by-others",
+            });
+          } else {
+            result.failed.push({
+              accountId,
+              courtId,
+              date,
+              error: errorMsg || "Booking failed",
+            });
+          }
+          continue;
+        }
+
+        result.success.push({
           accountId,
           courtId,
           date,
-          reason: forceCancel ? "force-cancel-declined" : "booked-by-others",
-        });
-      } else {
-        result.failed.push({
-          accountId,
-          courtId,
-          date,
-          error: errorMsg || "Booking failed",
+          dayIndex,
+          turno,
+          hora,
         });
       }
-      continue;
-    }
-
-    result.success.push({
-      accountId,
-      courtId,
-      date,
-      dayIndex,
-      turno,
-      hora,
     });
   }
+
+  const elapsed = Date.now() - startMs;
 
   return c.json(result);
 });
@@ -528,7 +594,7 @@ interface BookingWithAccount {
   courtId: number;
   date: string;
   time: string;
-  nome: string;
+  gnome: string;
 }
 
 async function fetchAllBookings(
@@ -559,7 +625,7 @@ async function fetchAllBookings(
           courtId,
           date: current.date,
           time: current.time,
-          nome: current.nome,
+          gnome: current.gnome,
         };
       }),
     ),
@@ -623,7 +689,6 @@ app.get("/api/bookings/export", async (c) => {
     );
     return c.body(icsContent);
   } catch (e) {
-    console.error("[export] error generating ICS:", e);
     return c.json({ error: "Failed to generate calendar file" }, 500);
   }
 });

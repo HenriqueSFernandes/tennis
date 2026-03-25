@@ -68,7 +68,7 @@ export function BulkBookModal({
     const hh = parseInt(parts[0] ?? "0", 10);
     const mm = parseInt(parts[1] ?? "0", 10);
     const minutosDesde8h = (hh - 8) * 60 + mm;
-    const hora = minutosDesde8h / 30;
+    const hora = minutosDesde8h / 60;
     return { hora, turno: 0 };
   }
 
