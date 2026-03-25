@@ -14,7 +14,10 @@ const DAY_NAMES = [
 interface FavoritesSectionProps {
   favorites: FavoriteWithAvailability[];
   accounts: { id: string; displayName: string }[];
-  onBookFavorite: (favorite: FavoriteWithAvailability) => void;
+  onBookFavorite: (
+    favorite: FavoriteWithAvailability,
+    weekOffset: number,
+  ) => void;
   onDeleteFavorite: (id: string) => void;
   onUpdateFavoriteName: (id: string, name: string) => void;
 }
@@ -77,9 +80,9 @@ export function FavoritesSection({
             <div
               key={fav.id}
               className={`bg-slate-800 rounded-xl p-4 border card-hover transition-all duration-200 ${
-                fav.isAvailable
+                fav.thisWeek.isAvailable || fav.nextWeek.isAvailable
                   ? "border-slate-700/50"
-                  : fav.isOurBooking
+                  : fav.thisWeek.isOurBooking || fav.nextWeek.isOurBooking
                     ? "border-emerald-500/30"
                     : "border-rose-500/30"
               }`}
@@ -129,37 +132,69 @@ export function FavoritesSection({
                 <span className="text-slate-400">Court {fav.courtId}</span>
               </div>
 
-              {fav.isBookedByOthers && (
-                <div className="mt-2 flex items-center gap-1.5 text-rose-400 text-xs">
-                  <AlertIcon className="w-3.5 h-3.5" />
-                  Ocupado por outro utilizador
+              {/* Week Status */}
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Esta semana:</span>
+                  {fav.thisWeek.isAvailable ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckIcon className="w-3 h-3" /> Livre
+                    </span>
+                  ) : fav.thisWeek.isOurBooking ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckIcon className="w-3 h-3" /> Já reservado
+                    </span>
+                  ) : (
+                    <span className="text-rose-400 flex items-center gap-1">
+                      <AlertIcon className="w-3 h-3" /> Ocupado
+                    </span>
+                  )}
                 </div>
-              )}
-
-              {fav.isOurBooking && (
-                <div className="mt-2 flex items-center gap-1.5 text-emerald-400 text-xs">
-                  <CheckIcon className="w-3.5 h-3.5" />
-                  Já reservado
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Próxima semana:</span>
+                  {fav.nextWeek.isAvailable ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckIcon className="w-3 h-3" /> Livre
+                    </span>
+                  ) : fav.nextWeek.isOurBooking ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckIcon className="w-3 h-3" /> Já reservado
+                    </span>
+                  ) : (
+                    <span className="text-rose-400 flex items-center gap-1">
+                      <AlertIcon className="w-3 h-3" /> Ocupado
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
 
-              <button
-                onClick={() => onBookFavorite(fav)}
-                disabled={fav.isBookedByOthers}
-                className={`mt-3 w-full py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  fav.isAvailable
-                    ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30"
-                    : fav.isOurBooking
-                      ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                      : "bg-slate-700 text-slate-500 cursor-not-allowed"
-                }`}
-              >
-                {fav.isAvailable
-                  ? "Reservar"
-                  : fav.isOurBooking
-                    ? "Já reservado"
-                    : "Indisponível"}
-              </button>
+              {/* Action Buttons */}
+              <div className="mt-3 space-y-2">
+                {fav.thisWeek.isAvailable && (
+                  <button
+                    onClick={() => onBookFavorite(fav, 0)}
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-all duration-200"
+                  >
+                    Reservar esta semana
+                  </button>
+                )}
+                {fav.nextWeek.isAvailable && (
+                  <button
+                    onClick={() => onBookFavorite(fav, 1)}
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-all duration-200"
+                  >
+                    Reservar próxima semana
+                  </button>
+                )}
+                {!fav.thisWeek.isAvailable && !fav.nextWeek.isAvailable && (
+                  <button
+                    disabled
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-slate-700 text-slate-500 cursor-not-allowed"
+                  >
+                    Indisponível
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

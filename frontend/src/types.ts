@@ -98,9 +98,16 @@ export interface UpdateFavoriteRequest {
   name: string;
 }
 
-export interface FavoriteWithAvailability extends Favorite {
+export interface WeekAvailability {
   isAvailable: boolean;
   isBookedByOthers: boolean;
   isOurBooking: boolean;
-  nextDate: string; // "DD-MM-YYYY"
+  weekOffset: number; // 0 = this week, 1 = next week
+  date: string; // "DD-MM-YYYY"
+}
+
+export interface FavoriteWithAvailability extends Favorite {
+  thisWeek: WeekAvailability;
+  nextWeek: WeekAvailability;
+  nextDate: string; // "DD-MM-YYYY" - the earlier of the two dates for sorting
 }

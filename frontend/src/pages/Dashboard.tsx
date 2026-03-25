@@ -148,70 +148,105 @@ export function Dashboard() {
     }
   };
 
-  function getWeekOffsetForDay(targetDayOfWeek: number): number {
-    const today = new Date();
-    const todayDay = today.getDay();
-    const todayMon = todayDay === 0 ? 6 : todayDay - 1; // 0=Mon, 6=Sun
-
-    if (targetDayOfWeek === todayMon) {
-      return 0; // Today - go to current week
-    }
-    if (targetDayOfWeek > todayMon) {
-      return 0; // Future day this week
-    }
-    return 1; // Past day this week - go to next week
-  }
-
-  function computeNextDate(fav: Favorite): string {
+  function computeDateForWeek(weekOffset: number, dayOfWeek: number): string {
     const today = new Date();
     const todayDay = today.getDay();
     const todayMon = todayDay === 0 ? 6 : todayDay - 1;
-    const daysUntil = (fav.dayOfWeek - todayMon + 7) % 7;
-    if (daysUntil === 0) {
-      const todayStr = `${String(today.getDate()).padStart(2, "0")}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getFullYear()}`;
-      return todayStr;
+
+    // Find the first day of the target week (Monday)
+    const daysSinceMonday = (todayMon + 1) % 7;
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - daysSinceMonday - weekOffset * 7);
+
+    // Add days to reach target day
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + dayOfWeek);
+
+    return `${String(targetDate.getDate()).padStart(2, "0")}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${targetDate.getFullYear()}`;
+  }
+
+  function getWeekAvailability(
+    fav: Favorite,
+    weekOffset: number,
+  ): {
+    isAvailable: boolean;
+    isBookedByOthers: boolean;
+    isOurBooking: boolean;
+  } {
+    const sched = schedules.find((s) => s.weekOffset === weekOffset);
+    if (!sched) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+      };
     }
-    const nextDate = new Date(today);
-    nextDate.setDate(today.getDate() + daysUntil);
-    return `${String(nextDate.getDate()).padStart(2, "0")}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${nextDate.getFullYear()}`;
+
+    const court = sched.courts.find((c) => c.courtId === fav.courtId);
+    if (!court) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+      };
+    }
+
+    const slot = court.slots.find(
+      (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
+    );
+    if (!slot) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+      };
+    }
+
+    if (slot.isOurs) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: true,
+      };
+    }
+    if (slot.bookedBy) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: true,
+        isOurBooking: false,
+      };
+    }
+    return { isAvailable: true, isBookedByOthers: false, isOurBooking: false };
   }
 
   function computeFavoritesWithAvailability(): FavoriteWithAvailability[] {
     const withAvailability = favorites.map((fav) => {
-      let isAvailable = false;
-      let isBookedByOthers = false;
-      let isOurBooking = false;
+      const thisWeekAvail = getWeekAvailability(fav, 0);
+      const nextWeekAvail = getWeekAvailability(fav, 1);
 
-      // Determine which week to check: if target day has passed this week, check next week
-      const targetWeekOffset = getWeekOffsetForDay(fav.dayOfWeek);
-      const sched = schedules.find((s) => s.weekOffset === targetWeekOffset);
+      const thisWeekDate = computeDateForWeek(0, fav.dayOfWeek);
+      const nextWeekDate = computeDateForWeek(1, fav.dayOfWeek);
 
-      if (sched) {
-        const court = sched.courts.find((c) => c.courtId === fav.courtId);
-        if (court) {
-          const slot = court.slots.find(
-            (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
-          );
-          if (slot) {
-            if (slot.isOurs) {
-              isOurBooking = true;
-              isAvailable = false;
-            } else if (slot.bookedBy) {
-              isBookedByOthers = true;
-              isAvailable = false;
-            } else {
-              isAvailable = true;
-            }
-          }
-        }
-      }
+      // nextDate for sorting: earlier of the two
+      const [aDay, aMonth, aYear] = thisWeekDate.split("-").map(Number);
+      const [bDay, bMonth, bYear] = nextWeekDate.split("-").map(Number);
+      const aDate = new Date(aYear ?? 0, (aMonth ?? 1) - 1, aDay ?? 0);
+      const bDate = new Date(bYear ?? 0, (bMonth ?? 1) - 1, bDay ?? 0);
+      const nextDate = aDate <= bDate ? thisWeekDate : nextWeekDate;
 
       return {
         ...fav,
-        isAvailable,
-        isBookedByOthers,
-        isOurBooking,
-        nextDate: computeNextDate(fav),
+        thisWeek: {
+          ...thisWeekAvail,
+          weekOffset: 0,
+          date: thisWeekDate,
+        },
+        nextWeek: {
+          ...nextWeekAvail,
+          weekOffset: 1,
+          date: nextWeekDate,
+        },
+        nextDate,
       };
     });
 
@@ -246,8 +281,10 @@ export function Dashboard() {
     });
   }
 
-  async function handleBookFavorite(fav: FavoriteWithAvailability) {
-    const weekOffset = getWeekOffsetForDay(fav.dayOfWeek);
+  async function handleBookFavorite(
+    fav: FavoriteWithAvailability,
+    weekOffset: number,
+  ) {
     navigate(`/schedule?week=${weekOffset}`, {
       state: {
         preselectedSlot: {
