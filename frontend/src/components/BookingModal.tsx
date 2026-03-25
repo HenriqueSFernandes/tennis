@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import type { ScheduleSlot, AccountSummary } from '../types';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import type { AccountSummary, ScheduleSlot } from "../types";
 
 interface BookingModalProps {
   slot: ScheduleSlot;
@@ -10,53 +10,67 @@ interface BookingModalProps {
   onCancel: () => void;
 }
 
-const DAY_NAMES = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+const DAY_NAMES = [
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+  "Domingo",
+];
 
-export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }: BookingModalProps) {
-  const [selectedAccount, setSelectedAccount] = useState(accounts[0]?.id ?? '');
+export function BookingModal({
+  slot,
+  courtName,
+  accounts,
+  onConfirm,
+  onCancel,
+}: BookingModalProps) {
+  const [selectedAccount, setSelectedAccount] = useState(accounts[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    document.body.classList.add('overflow-hidden');
+    document.body.classList.add("overflow-hidden");
     return () => {
-      document.body.classList.remove('overflow-hidden');
+      document.body.classList.remove("overflow-hidden");
     };
   }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !loading) {
+      if (e.key === "Escape" && !loading) {
         onCancel();
       }
     }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [loading, onCancel]);
 
   async function handleConfirm() {
     if (!selectedAccount) return;
-    setError('');
+    setError("");
     setLoading(true);
     try {
       await onConfirm(selectedAccount);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao reservar');
+      setError(e instanceof Error ? e.message : "Erro ao reservar");
       setLoading(false);
     }
   }
 
   // Format date from DD-MM-YYYY
-  const [dd, mm, yyyy] = slot.date.split('-');
+  const [dd, mm, yyyy] = slot.date.split("-");
   const dateStr = `${dd}/${mm}/${yyyy}`;
 
-  const selectedAccountData = accounts.find(a => a.id === selectedAccount);
+  const _selectedAccountData = accounts.find((a) => a.id === selectedAccount);
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={!loading ? onCancel : undefined}
       />
 
@@ -77,7 +91,9 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-sm">Dia</span>
-            <span className="text-white font-medium">{DAY_NAMES[slot.dayIndex]}</span>
+            <span className="text-white font-medium">
+              {DAY_NAMES[slot.dayIndex]}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-sm">Data</span>
@@ -85,14 +101,18 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-sm">Hora</span>
-            <span className="text-emerald-400 font-semibold text-lg">{slot.time}</span>
+            <span className="text-emerald-400 font-semibold text-lg">
+              {slot.time}
+            </span>
           </div>
         </div>
 
         {/* Account Selection */}
         {accounts.length > 1 ? (
           <div className="space-y-2">
-            <label className="text-slate-300 text-sm font-medium">Reservar com a conta</label>
+            <label className="text-slate-300 text-sm font-medium">
+              Reservar com a conta
+            </label>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {accounts.map((acc) => (
                 <button
@@ -100,24 +120,32 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
                   onClick={() => setSelectedAccount(acc.id)}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left ${
                     selectedAccount === acc.id
-                      ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/30'
-                      : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'
+                      ? "bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/30"
+                      : "bg-slate-900/50 border-slate-700/50 hover:border-slate-600"
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 ${
-                    selectedAccount === acc.id
-                      ? 'bg-emerald-600'
-                      : 'bg-slate-700'
-                  }`}>
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 ${
+                      selectedAccount === acc.id
+                        ? "bg-emerald-600"
+                        : "bg-slate-700"
+                    }`}
+                  >
                     {acc.displayName.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium truncate ${
-                      selectedAccount === acc.id ? 'text-white' : 'text-slate-300'
-                    }`}>
+                    <p
+                      className={`font-medium truncate ${
+                        selectedAccount === acc.id
+                          ? "text-white"
+                          : "text-slate-300"
+                      }`}
+                    >
                       {acc.displayName}
                     </p>
-                    <p className="text-slate-500 text-xs truncate">@{acc.username}</p>
+                    <p className="text-slate-500 text-xs truncate">
+                      @{acc.username}
+                    </p>
                   </div>
                   {selectedAccount === acc.id && (
                     <CheckIcon className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -131,11 +159,15 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
             <p className="text-slate-400 text-sm mb-1">Reservar com</p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-                {accounts[0]!.displayName.charAt(0).toUpperCase()}
+                {accounts[0]?.displayName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="text-white font-medium">{accounts[0]!.displayName}</p>
-                <p className="text-slate-500 text-xs">@{accounts[0]!.username}</p>
+                <p className="text-white font-medium">
+                  {accounts[0]?.displayName}
+                </p>
+                <p className="text-slate-500 text-xs">
+                  @{accounts[0]?.username}
+                </p>
               </div>
             </div>
           </div>
@@ -165,8 +197,7 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
           >
             {loading ? (
               <>
-                <SpinnerIcon className="w-5 h-5 animate-spin" />
-                A reservar...
+                <SpinnerIcon className="w-5 h-5 animate-spin" />A reservar...
               </>
             ) : (
               <>
@@ -178,7 +209,7 @@ export function BookingModal({ slot, courtName, accounts, onConfirm, onCancel }:
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -192,39 +223,45 @@ interface CancelModalProps {
   onCancel: () => void;
 }
 
-export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel }: CancelModalProps) {
+export function CancelModal({
+  slot,
+  courtName,
+  accountName,
+  onConfirm,
+  onCancel,
+}: CancelModalProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    document.body.classList.add('overflow-hidden');
+    document.body.classList.add("overflow-hidden");
     return () => {
-      document.body.classList.remove('overflow-hidden');
+      document.body.classList.remove("overflow-hidden");
     };
   }, []);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !loading) {
+      if (e.key === "Escape" && !loading) {
         onCancel();
       }
     }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [loading, onCancel]);
 
   async function handleConfirm() {
-    setError('');
+    setError("");
     setLoading(true);
     try {
       await onConfirm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao cancelar');
+      setError(e instanceof Error ? e.message : "Erro ao cancelar");
       setLoading(false);
     }
   }
 
-  const [dd, mm, yyyy] = slot.date.split('-');
+  const [dd, mm, yyyy] = slot.date.split("-");
   const dateStr = `${dd}/${mm}/${yyyy}`;
 
   return createPortal(
@@ -259,7 +296,9 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-sm">Hora</span>
-            <span className="text-emerald-400 font-semibold text-lg">{slot.time}</span>
+            <span className="text-emerald-400 font-semibold text-lg">
+              {slot.time}
+            </span>
           </div>
         </div>
 
@@ -297,8 +336,7 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
           >
             {loading ? (
               <>
-                <SpinnerIcon className="w-5 h-5 animate-spin" />
-                A cancelar...
+                <SpinnerIcon className="w-5 h-5 animate-spin" />A cancelar...
               </>
             ) : (
               <>
@@ -310,7 +348,7 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -318,40 +356,90 @@ export function CancelModal({ slot, courtName, accountName, onConfirm, onCancel 
 
 function CalendarIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 }
 
 function AlertIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }
 
 function AlertTriangleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
     </svg>
   );
 }
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M6 18L18 6M6 6l12 12"
+      />
     </svg>
   );
 }
@@ -359,8 +447,19 @@ function XIcon({ className }: { className?: string }) {
 function SpinnerIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
     </svg>
   );
 }

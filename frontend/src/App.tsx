@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider, useAuth } from './AuthContext';
-import { DataCacheProvider } from './DataCacheContext';
-import { PasswordGate } from './components/PasswordGate';
-import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { Schedule } from './pages/Schedule';
-import { Accounts } from './pages/Accounts';
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { Layout } from "./components/Layout";
+import { PasswordGate } from "./components/PasswordGate";
+import { DataCacheProvider } from "./DataCacheContext";
+import { Accounts } from "./pages/Accounts";
+import { Dashboard } from "./pages/Dashboard";
+import { Schedule } from "./pages/Schedule";
 
 function AppRoutes() {
   const { isUnlocked } = useAuth();

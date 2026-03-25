@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import type React from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 interface AuthContextValue {
   password: string | null;
@@ -9,10 +10,11 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const PASSWORD_KEY = 'rt_password';
+const PASSWORD_KEY = "rt_password";
 
 const AUTH_URL =
-  (import.meta.env.VITE_API_URL ?? 'https://api.riotinto.henriquesf.me') + '/api/auth';
+  (import.meta.env.VITE_API_URL ?? "https://api.riotinto.henriquesf.me") +
+  "/api/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [password, setPassword] = useState<string | null>(() => {
@@ -26,8 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const unlock = useCallback(async (pwd: string): Promise<boolean> => {
     try {
       const resp = await fetch(AUTH_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pwd }),
       });
       if (resp.ok) {
@@ -55,6 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

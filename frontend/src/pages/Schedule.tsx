@@ -1,22 +1,25 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '../AuthContext';
-import { useDataCache } from '../DataCacheContext';
-import { book, cancelBook } from '../api';
-import { CourtGrid } from '../components/CourtGrid';
-import { BookingModal, CancelModal } from '../components/BookingModal';
-import type { ScheduleResponse, AccountSummary, ScheduleSlot } from '../types';
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../AuthContext";
+import { book, cancelBook } from "../api";
+import { BookingModal, CancelModal } from "../components/BookingModal";
+import { CourtGrid } from "../components/CourtGrid";
+import { useDataCache } from "../DataCacheContext";
+import type { AccountSummary, ScheduleResponse, ScheduleSlot } from "../types";
 
-const WEEK_LABELS = ['Esta semana', 'Próxima semana', 'Daqui a 2 semanas'];
+const WEEK_LABELS = ["Esta semana", "Próxima semana", "Daqui a 2 semanas"];
 
 export function Schedule() {
   const { password } = useAuth();
-  const { getSchedule, getAccounts, invalidate, refresh, staleKeys } = useDataCache();
+  const { getSchedule, getAccounts, invalidate, refresh, staleKeys } =
+    useDataCache();
   const [weekOffset, setWeekOffset] = useState(0);
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [weekDirection, setWeekDirection] = useState<'next' | 'prev' | null>(null);
+  const [error, setError] = useState("");
+  const [weekDirection, setWeekDirection] = useState<"next" | "prev" | null>(
+    null,
+  );
 
   // Modal state
   const [bookSlot, setBookSlot] = useState<ScheduleSlot | null>(null);
@@ -27,7 +30,7 @@ export function Schedule() {
   const loadData = useCallback(async () => {
     if (!password) return;
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const [s, a] = await Promise.all([
         getSchedule(weekOffset),
@@ -36,7 +39,7 @@ export function Schedule() {
       setSchedule(s);
       setAccounts(a);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar horário');
+      setError(e instanceof Error ? e.message : "Erro ao carregar horário");
     } finally {
       setLoading(false);
     }
@@ -90,7 +93,7 @@ export function Schedule() {
   async function handleCancel() {
     if (!cancelSlot || !cancelCourtId || !password) return;
     await cancelBook(password, {
-      accountId: cancelSlot.ourAccountId!,
+      accountId: cancelSlot.ourAccountId ?? "",
       courtId: cancelCourtId,
       date: cancelSlot.date,
       dayIndex: cancelSlot.dayIndex,
@@ -104,23 +107,26 @@ export function Schedule() {
     await loadData();
   }
 
-  const bookSlotCourt = bookSlot && bookCourtId
-    ? schedule?.courts.find((c) => c.courtId === bookCourtId)
-    : null;
+  const bookSlotCourt =
+    bookSlot && bookCourtId
+      ? schedule?.courts.find((c) => c.courtId === bookCourtId)
+      : null;
 
-  const cancelSlotCourt = cancelSlot && cancelCourtId
-    ? schedule?.courts.find((c) => c.courtId === cancelCourtId)
-    : null;
+  const cancelSlotCourt =
+    cancelSlot && cancelCourtId
+      ? schedule?.courts.find((c) => c.courtId === cancelCourtId)
+      : null;
 
-  const cancelAccountName =
-    cancelSlot?.ourAccountId
-      ? accounts.find((a) => a.id === cancelSlot.ourAccountId)?.displayName ?? '?'
-      : '?';
+  const cancelAccountName = cancelSlot?.ourAccountId
+    ? (accounts.find((a) => a.id === cancelSlot.ourAccountId)?.displayName ??
+      "?")
+    : "?";
 
   // Count our bookings this week
-  const ourBookingsCount = schedule?.courts.reduce((total, court) => {
-    return total + court.slots.filter(slot => slot.isOurs).length;
-  }, 0) ?? 0;
+  const ourBookingsCount =
+    schedule?.courts.reduce((total, court) => {
+      return total + court.slots.filter((slot) => slot.isOurs).length;
+    }, 0) ?? 0;
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto">
@@ -129,19 +135,18 @@ export function Schedule() {
         <div>
           <h1 className="text-white text-2xl font-bold">Campos</h1>
           <p className="text-slate-400 text-sm mt-0.5">
-            {ourBookingsCount > 0 
-              ? `${ourBookingsCount} reserva${ourBookingsCount !== 1 ? 's' : ''} esta semana`
-              : 'Sem reservas nesta semana'
-            }
+            {ourBookingsCount > 0
+              ? `${ourBookingsCount} reserva${ourBookingsCount !== 1 ? "s" : ""} esta semana`
+              : "Sem reservas nesta semana"}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isScheduleStale && !loading ? 'animate-pulse' : ''}`}
+          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isScheduleStale && !loading ? "animate-pulse" : ""}`}
           title="Atualizar"
         >
-          <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshIcon className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
@@ -150,14 +155,16 @@ export function Schedule() {
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => {
-              setWeekDirection('prev');
+              setWeekDirection("prev");
               setWeekOffset((w) => Math.max(0, w - 1));
             }}
             disabled={weekOffset === 0}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
           >
             <ChevronLeftIcon className="w-5 h-5" />
-            <span className="hidden sm:inline text-sm font-medium">Anterior</span>
+            <span className="hidden sm:inline text-sm font-medium">
+              Anterior
+            </span>
           </button>
 
           <span className="text-white font-semibold">
@@ -166,13 +173,15 @@ export function Schedule() {
 
           <button
             onClick={() => {
-              setWeekDirection('next');
+              setWeekDirection("next");
               setWeekOffset((w) => Math.min(2, w + 1));
             }}
             disabled={weekOffset >= 2}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
           >
-            <span className="hidden sm:inline text-sm font-medium">Seguinte</span>
+            <span className="hidden sm:inline text-sm font-medium">
+              Seguinte
+            </span>
             <ChevronRightIcon className="w-5 h-5" />
           </button>
         </div>
@@ -183,13 +192,13 @@ export function Schedule() {
             <button
               key={offset}
               onClick={() => {
-                setWeekDirection(offset > weekOffset ? 'next' : 'prev');
+                setWeekDirection(offset > weekOffset ? "next" : "prev");
                 setWeekOffset(offset);
               }}
               className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
-                offset === weekOffset 
-                  ? 'bg-emerald-500' 
-                  : 'bg-slate-700 hover:bg-slate-600'
+                offset === weekOffset
+                  ? "bg-emerald-500"
+                  : "bg-slate-700 hover:bg-slate-600"
               }`}
               aria-label={`Ir para ${WEEK_LABELS[offset]}`}
             />
@@ -213,7 +222,7 @@ export function Schedule() {
       ) : schedule ? (
         <div
           key={`week-${weekOffset}`}
-          className={`space-y-5 ${weekDirection ? `week-transition-${weekDirection}` : ''}`}
+          className={`space-y-5 ${weekDirection ? `week-transition-${weekDirection}` : ""}`}
         >
           {schedule.courts.map((court) => (
             <CourtGrid
@@ -264,7 +273,10 @@ function CourtGridSkeleton() {
           <div key={i} className="flex gap-3">
             <div className="w-12 h-8 bg-slate-700 rounded-lg shimmer" />
             {[1, 2, 3, 4, 5, 6, 7].map((j) => (
-              <div key={j} className="flex-1 h-8 bg-slate-700 rounded-lg shimmer" />
+              <div
+                key={j}
+                className="flex-1 h-8 bg-slate-700 rounded-lg shimmer"
+              />
             ))}
           </div>
         ))}
@@ -277,32 +289,72 @@ function CourtGridSkeleton() {
 
 function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
     </svg>
   );
 }
 
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 19l-7-7 7-7"
+      />
     </svg>
   );
 }
 
 function ChevronRightIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
     </svg>
   );
 }
 
 function AlertIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }

@@ -1,10 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../AuthContext';
-import { useDataCache } from '../DataCacheContext';
-import type { CurrentBookingInfo, AccountSummary } from '../types';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../AuthContext";
+import { useDataCache } from "../DataCacheContext";
+import type { AccountSummary, CurrentBookingInfo } from "../types";
 
-const DAY_NAMES = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+const _DAY_NAMES = [
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+  "Domingo",
+];
 
 export function Dashboard() {
   const { password } = useAuth();
@@ -12,12 +20,12 @@ export function Dashboard() {
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   async function loadData() {
     if (!password) return;
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const [s0, s1, s2, a] = await Promise.all([
         getSchedule(0),
@@ -33,12 +41,12 @@ export function Dashboard() {
             .map((slot) => {
               const acc = a.find((ac) => ac.id === slot.ourAccountId);
               return {
-                accountId: slot.ourAccountId ?? '',
-                username: acc?.username ?? slot.bookedBy ?? '',
-                displayName: acc?.displayName ?? slot.bookedBy ?? '',
+                accountId: slot.ourAccountId ?? "",
+                username: acc?.username ?? slot.bookedBy ?? "",
+                displayName: acc?.displayName ?? slot.bookedBy ?? "",
                 courtId: court.courtId,
                 booking: {
-                  nome: slot.bookedByName ?? '',
+                  nome: slot.bookedByName ?? "",
                   date: slot.date,
                   time: slot.time,
                 },
@@ -50,22 +58,24 @@ export function Dashboard() {
       const now = new Date();
       const sorted = allSlots
         .filter((x) => {
-          const [dd = 0, mm = 1, yyyy = 1970] = x.booking.date.split('-').map(Number);
-          const [hh = 0, min = 0] = x.booking.time.split(':').map(Number);
+          const [dd = 0, mm = 1, yyyy = 1970] = x.booking.date
+            .split("-")
+            .map(Number);
+          const [hh = 0, min = 0] = x.booking.time.split(":").map(Number);
           const expiresAt = new Date(yyyy, mm - 1, dd, hh + 1, min);
           return expiresAt > now;
         })
         .sort((x, y) => {
-          const dateA = x.booking.date.split('-').reverse().join('');
-          const dateB = y.booking.date.split('-').reverse().join('');
+          const dateA = x.booking.date.split("-").reverse().join("");
+          const dateB = y.booking.date.split("-").reverse().join("");
           if (dateA !== dateB) return dateA.localeCompare(dateB);
-          return (x.booking.time ?? '').localeCompare(y.booking.time ?? '');
+          return (x.booking.time ?? "").localeCompare(y.booking.time ?? "");
         });
 
       setBookings(sorted);
       setAccounts(a);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar dados');
+      setError(e instanceof Error ? e.message : "Erro ao carregar dados");
     } finally {
       setLoading(false);
     }
@@ -80,9 +90,13 @@ export function Dashboard() {
     await loadData();
   };
 
-  const isDashboardStale = staleKeys.has('schedule:0') || staleKeys.has('schedule:1') || staleKeys.has('schedule:2') || staleKeys.has('accounts');
+  const isDashboardStale =
+    staleKeys.has("schedule:0") ||
+    staleKeys.has("schedule:1") ||
+    staleKeys.has("schedule:2") ||
+    staleKeys.has("accounts");
 
-  const bookedAccountsCount = new Set(bookings.map(b => b.accountId)).size;
+  const _bookedAccountsCount = new Set(bookings.map((b) => b.accountId)).size;
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
@@ -91,19 +105,18 @@ export function Dashboard() {
         <div>
           <h1 className="text-white text-2xl font-bold">Dashboard</h1>
           <p className="text-slate-400 text-sm mt-0.5">
-            {bookings.length > 0 
-              ? `${bookings.length} reserva${bookings.length !== 1 ? 's' : ''} ativa${bookings.length !== 1 ? 's' : ''}`
-              : 'Nenhuma reserva ativa'
-            }
+            {bookings.length > 0
+              ? `${bookings.length} reserva${bookings.length !== 1 ? "s" : ""} ativa${bookings.length !== 1 ? "s" : ""}`
+              : "Nenhuma reserva ativa"}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isDashboardStale && !loading ? 'animate-pulse' : ''}`}
+          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isDashboardStale && !loading ? "animate-pulse" : ""}`}
           title="Atualizar"
         >
-          <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshIcon className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
@@ -119,10 +132,12 @@ export function Dashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UsersIcon className="w-4 h-4 text-slate-500" />
-            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">Contas</h2>
+            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+              Contas
+            </h2>
           </div>
-          <Link 
-            to="/accounts" 
+          <Link
+            to="/accounts"
             className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
           >
             Gerir
@@ -131,7 +146,7 @@ export function Dashboard() {
         </div>
 
         {accounts.length === 0 && !loading ? (
-          <EmptyState 
+          <EmptyState
             icon={<UsersIcon className="w-8 h-8" />}
             title="Nenhuma conta configurada"
             description="Adicione contas riotinto.pt para começar a reservar campos."
@@ -159,19 +174,25 @@ export function Dashboard() {
                 <div
                   key={acc.id}
                   className={`group bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/50 card-hover ${
-                    hasBooking ? 'ring-1 ring-emerald-500/30' : ''
+                    hasBooking ? "ring-1 ring-emerald-500/30" : ""
                   }`}
                 >
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
-                    hasBooking 
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20' 
-                      : 'bg-slate-700'
-                  }`}>
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
+                      hasBooking
+                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
+                        : "bg-slate-700"
+                    }`}
+                  >
                     {acc.displayName.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-semibold truncate">{acc.displayName}</p>
-                    <p className="text-slate-500 text-xs truncate">{acc.username}</p>
+                    <p className="text-white text-sm font-semibold truncate">
+                      {acc.displayName}
+                    </p>
+                    <p className="text-slate-500 text-xs truncate">
+                      {acc.username}
+                    </p>
                   </div>
                   <div className="shrink-0">
                     {hasBooking ? (
@@ -201,8 +222,8 @@ export function Dashboard() {
               Reservas ativas
             </h2>
           </div>
-          <Link 
-            to="/schedule" 
+          <Link
+            to="/schedule"
             className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
           >
             Ver campos
@@ -217,7 +238,7 @@ export function Dashboard() {
             ))}
           </div>
         ) : bookings.length === 0 ? (
-          <EmptyState 
+          <EmptyState
             icon={<CalendarIcon className="w-8 h-8" />}
             title="Nenhuma reserva ativa"
             description="Não há reservas de campos para os próximos dias."
@@ -233,14 +254,14 @@ export function Dashboard() {
           />
         ) : (
           <div className="space-y-3">
-            {bookings.map((b, i) => {
+            {bookings.map((b, _i) => {
               const acc = accounts.find((a) => a.id === b.accountId);
-              const [dd, mm] = b.booking.date.split('-');
+              const [dd, mm] = b.booking.date.split("-");
               const isToday = isDateToday(b.booking.date);
-              
+
               return (
                 <Link
-                  key={i}
+                  key={`${b.accountId}-${b.booking.date}-${b.booking.time}-${b.courtId}`}
                   to="/schedule"
                   className="group bg-slate-800 rounded-xl p-4 flex items-center gap-4 border border-slate-700/50 card-hover"
                 >
@@ -285,12 +306,12 @@ export function Dashboard() {
 
 // Helper Components
 
-function EmptyState({ 
-  icon, 
-  title, 
-  description, 
-  action 
-}: { 
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
   icon: React.ReactNode;
   title: string;
   description: string;
@@ -336,68 +357,140 @@ function BookingCardSkeleton() {
 // Helper Functions
 
 function isDateToday(dateStr: string): boolean {
-  const [dd, mm, yyyy] = dateStr.split('-').map(Number);
+  const [dd, mm, yyyy] = dateStr.split("-").map(Number);
   const date = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 1);
   const today = new Date();
-  return date.getDate() === today.getDate() &&
+  return (
+    date.getDate() === today.getDate() &&
     date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
+    date.getFullYear() === today.getFullYear()
+  );
 }
 
 // Icon Components
 
 function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
     </svg>
   );
 }
 
 function AlertIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }
 
 function UsersIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+      />
     </svg>
   );
 }
 
 function CalendarIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function ArrowRightIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
     </svg>
   );
 }
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4v16m8-8H4"
+      />
     </svg>
   );
 }
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 }

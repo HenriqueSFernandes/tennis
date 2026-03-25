@@ -13,7 +13,7 @@ html {
 @layer base {
   body {
     @apply bg-slate-900 text-slate-100;
-    font-feature-settings: 'cv11', 'ss01';
+    font-feature-settings: "cv11", "ss01";
   }
 
   /* Improved focus ring for accessibility */

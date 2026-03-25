@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { useAuth } from '../AuthContext';
+import { useState } from "react";
+import { useAuth } from "../AuthContext";
 
 export function PasswordGate() {
   const { unlock } = useAuth();
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!value.trim()) return;
-    
-    setError('');
+
+    setError("");
     setLoading(true);
     const ok = await unlock(value);
     setLoading(false);
-    
+
     if (!ok) {
-      setError('Palavra-passe incorreta');
-      setValue('');
+      setError("Palavra-passe incorreta");
+      setValue("");
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
@@ -33,13 +33,17 @@ export function PasswordGate() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className={`relative bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/50 p-8 w-full max-w-md border border-slate-700/50 scale-in ${shake ? 'animate-shake' : ''}`}>
+      <div
+        className={`relative bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/50 p-8 w-full max-w-md border border-slate-700/50 scale-in ${shake ? "animate-shake" : ""}`}
+      >
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 mx-auto mb-6 flex items-center justify-center shadow-xl shadow-emerald-500/20 animate-float">
             <span className="text-4xl">🎾</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1">Rio Tinto Tennis</h1>
+          <h1 className="text-2xl font-bold text-white mb-1">
+            Rio Tinto Tennis
+          </h1>
           <p className="text-slate-400 text-sm">Court Booking Assistant</p>
         </div>
 
@@ -79,8 +83,7 @@ export function PasswordGate() {
           >
             {loading ? (
               <>
-                <SpinnerIcon className="w-5 h-5 animate-spin" />
-                A verificar...
+                <SpinnerIcon className="w-5 h-5 animate-spin" />A verificar...
               </>
             ) : (
               <>
@@ -126,16 +129,36 @@ export function PasswordGate() {
 
 function LockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+      />
     </svg>
   );
 }
 
 function AlertIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }
@@ -143,16 +166,37 @@ function AlertIcon({ className }: { className?: string }) {
 function SpinnerIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
     </svg>
   );
 }
 
 function ArrowRightIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 7l5 5m0 0l-5 5m5-5H6"
+      />
     </svg>
   );
 }

@@ -1,21 +1,26 @@
-import Database from 'better-sqlite3';
-import path from 'node:path';
-import fs from 'node:fs';
-import type { Db, StoredAccount, AccountSummary, CachedSession } from './types.js';
-import { encrypt, decrypt } from './crypto.js';
+import fs from "node:fs";
+import path from "node:path";
+import Database from "better-sqlite3";
+import { decrypt, encrypt } from "./crypto.js";
+import type {
+  AccountSummary,
+  CachedSession,
+  Db,
+  StoredAccount,
+} from "./types.js";
 
 const SESSION_TTL_MS = 90 * 60 * 1000; // 90 minutes
 
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 export function openDb(): Db {
-  const dataDir = process.env['DATA_DIR'] ?? path.join(process.cwd(), 'data');
+  const dataDir = process.env["DATA_DIR"] ?? path.join(process.cwd(), "data");
   fs.mkdirSync(dataDir, { recursive: true });
-  const dbPath = path.join(dataDir, 'db.sqlite');
+  const dbPath = path.join(dataDir, "db.sqlite");
 
   const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS accounts (
@@ -46,7 +51,7 @@ export function openDb(): Db {
 export function listAccounts(db: Db): AccountSummary[] {
   const rows = db
     .prepare(
-      'SELECT id, username, display_name, phone, created_at FROM accounts ORDER BY created_at ASC',
+      "SELECT id, username, display_name, phone, created_at FROM accounts ORDER BY created_at ASC",
     )
     .all() as Array<{
     id: string;
@@ -68,7 +73,7 @@ export function listAccounts(db: Db): AccountSummary[] {
 export function getStoredAccount(db: Db, id: string): StoredAccount | null {
   const row = db
     .prepare(
-      'SELECT id, username, display_name, phone, encrypted_password, salt, iv, created_at FROM accounts WHERE id = ?',
+      "SELECT id, username, display_name, phone, encrypted_password, salt, iv, created_at FROM accounts WHERE id = ?",
     )
     .get(id) as
     | {
@@ -111,15 +116,24 @@ export async function addAccount(
   db.prepare(
     `INSERT INTO accounts (id, username, display_name, phone, encrypted_password, salt, iv, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, username, displayName, phone, blob.ciphertext, blob.salt, blob.iv, createdAt);
+  ).run(
+    id,
+    username,
+    displayName,
+    phone,
+    blob.ciphertext,
+    blob.salt,
+    blob.iv,
+    createdAt,
+  );
 
   return { id, username, displayName, phone, createdAt };
 }
 
 export function deleteAccount(db: Db, id: string): boolean {
-  const result = db.prepare('DELETE FROM accounts WHERE id = ?').run(id);
+  const result = db.prepare("DELETE FROM accounts WHERE id = ?").run(id);
   if (result.changes === 0) return false;
-  db.prepare('DELETE FROM sessions WHERE account_id = ?').run(id);
+  db.prepare("DELETE FROM sessions WHERE account_id = ?").run(id);
   return true;
 }
 
@@ -130,7 +144,7 @@ export function updateAccount(
   phone: string,
 ): boolean {
   const result = db
-    .prepare('UPDATE accounts SET display_name = ?, phone = ? WHERE id = ?')
+    .prepare("UPDATE accounts SET display_name = ?, phone = ? WHERE id = ?")
     .run(displayName, phone, id);
   return result.changes > 0;
 }
@@ -150,18 +164,28 @@ export async function getDecryptedPassword(
 
 // ── Session cache ─────────────────────────────────────────────────────────────
 
-export function getCachedSession(db: Db, accountId: string): CachedSession | null {
+export function getCachedSession(
+  db: Db,
+  accountId: string,
+): CachedSession | null {
   const row = db
-    .prepare('SELECT cookies, csrf_token, user_id, cached_at FROM sessions WHERE account_id = ?')
+    .prepare(
+      "SELECT cookies, csrf_token, user_id, cached_at FROM sessions WHERE account_id = ?",
+    )
     .get(accountId) as
-    | { cookies: string; csrf_token: string; user_id: string; cached_at: number }
+    | {
+        cookies: string;
+        csrf_token: string;
+        user_id: string;
+        cached_at: number;
+      }
     | undefined;
 
   if (!row) return null;
 
   // Evict expired sessions
   if (Date.now() - row.cached_at > SESSION_TTL_MS) {
-    db.prepare('DELETE FROM sessions WHERE account_id = ?').run(accountId);
+    db.prepare("DELETE FROM sessions WHERE account_id = ?").run(accountId);
     return null;
   }
 
@@ -173,7 +197,11 @@ export function getCachedSession(db: Db, accountId: string): CachedSession | nul
   };
 }
 
-export function saveSession(db: Db, accountId: string, session: CachedSession): void {
+export function saveSession(
+  db: Db,
+  accountId: string,
+  session: CachedSession,
+): void {
   db.prepare(
     `INSERT INTO sessions (account_id, cookies, csrf_token, user_id, cached_at)
      VALUES (?, ?, ?, ?, ?)
@@ -182,17 +210,23 @@ export function saveSession(db: Db, accountId: string, session: CachedSession): 
        csrf_token = excluded.csrf_token,
        user_id    = excluded.user_id,
        cached_at  = excluded.cached_at`,
-  ).run(accountId, session.cookies, session.csrfToken, session.userId, session.cachedAt);
+  ).run(
+    accountId,
+    session.cookies,
+    session.csrfToken,
+    session.userId,
+    session.cachedAt,
+  );
 }
 
 export function clearSession(db: Db, accountId: string): void {
-  db.prepare('DELETE FROM sessions WHERE account_id = ?').run(accountId);
+  db.prepare("DELETE FROM sessions WHERE account_id = ?").run(accountId);
 }
 
 // Returns the site's numeric user ID for an account from its cached session, or null if no session.
 export function getSiteUserId(db: Db, accountId: string): string | null {
   const row = db
-    .prepare('SELECT user_id FROM sessions WHERE account_id = ?')
+    .prepare("SELECT user_id FROM sessions WHERE account_id = ?")
     .get(accountId) as { user_id: string } | undefined;
   return row?.user_id ?? null;
 }

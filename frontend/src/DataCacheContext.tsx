@@ -1,7 +1,16 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
-import type { AccountSummary, ScheduleResponse } from './types';
-import { getAccounts as apiGetAccounts, getSchedule as apiGetSchedule } from './api';
-import { useAuth } from './AuthContext';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
+import { useAuth } from "./AuthContext";
+import {
+  getAccounts as apiGetAccounts,
+  getSchedule as apiGetSchedule,
+} from "./api";
+import type { AccountSummary, ScheduleResponse } from "./types";
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -36,16 +45,19 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
   });
   const [staleKeys, setStaleKeys] = useState<StaleKeys>(new Set());
 
-  const isStale = useCallback((key: string): boolean => {
-    return staleKeys.has(key);
-  }, [staleKeys]);
+  const isStale = useCallback(
+    (key: string): boolean => {
+      return staleKeys.has(key);
+    },
+    [staleKeys],
+  );
 
   const invalidate = useCallback((key?: string) => {
     if (key) {
-      if (key.startsWith('schedule:')) {
-        const offset = parseInt(key.split(':')[1]!, 10);
+      if (key.startsWith("schedule:")) {
+        const offset = parseInt(key.split(":")[1] ?? "0", 10);
         cacheRef.current.schedule.delete(offset);
-      } else if (key === 'accounts') {
+      } else if (key === "accounts") {
         cacheRef.current.accounts = null;
       }
       setStaleKeys((prev) => {
@@ -60,24 +72,27 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const fetchSchedule = useCallback(async (weekOffset: number): Promise<ScheduleResponse> => {
-    if (!password) throw new Error('Not authenticated');
+  const fetchSchedule = useCallback(
+    async (weekOffset: number): Promise<ScheduleResponse> => {
+      if (!password) throw new Error("Not authenticated");
 
-    const cached = cacheRef.current.schedule.get(weekOffset);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.data;
-    }
+      const cached = cacheRef.current.schedule.get(weekOffset);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return cached.data;
+      }
 
-    const data = await apiGetSchedule(password, weekOffset);
-    cacheRef.current.schedule.set(weekOffset, {
-      data,
-      timestamp: Date.now(),
-    });
-    return data;
-  }, [password]);
+      const data = await apiGetSchedule(password, weekOffset);
+      cacheRef.current.schedule.set(weekOffset, {
+        data,
+        timestamp: Date.now(),
+      });
+      return data;
+    },
+    [password],
+  );
 
   const fetchAccounts = useCallback(async (): Promise<AccountSummary[]> => {
-    if (!password) throw new Error('Not authenticated');
+    if (!password) throw new Error("Not authenticated");
 
     const cached = cacheRef.current.accounts;
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -110,31 +125,34 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
       cacheRef.current.schedule.set(2, { data: s2, timestamp: Date.now() });
       cacheRef.current.accounts = { data: a, timestamp: Date.now() };
     } catch (err) {
-      keys.push('schedule:0', 'schedule:1', 'schedule:2', 'accounts');
+      keys.push("schedule:0", "schedule:1", "schedule:2", "accounts");
       setStaleKeys(new Set(keys));
       throw err;
     }
   }, [invalidate, password]);
 
-  const getSchedule = useCallback(async (weekOffset: number): Promise<ScheduleResponse> => {
-    try {
-      return await fetchSchedule(weekOffset);
-    } catch (e) {
-      const cached = cacheRef.current.schedule.get(weekOffset);
-      if (cached) {
-        setStaleKeys((prev) => new Set(prev).add(`schedule:${weekOffset}`));
-        return cached.data;
+  const getSchedule = useCallback(
+    async (weekOffset: number): Promise<ScheduleResponse> => {
+      try {
+        return await fetchSchedule(weekOffset);
+      } catch (e) {
+        const cached = cacheRef.current.schedule.get(weekOffset);
+        if (cached) {
+          setStaleKeys((prev) => new Set(prev).add(`schedule:${weekOffset}`));
+          return cached.data;
+        }
+        throw e;
       }
-      throw e;
-    }
-  }, [fetchSchedule]);
+    },
+    [fetchSchedule],
+  );
 
   const getAccounts = useCallback(async (): Promise<AccountSummary[]> => {
     try {
       return await fetchAccounts();
     } catch (e) {
       if (cacheRef.current.accounts) {
-        setStaleKeys((prev) => new Set(prev).add('accounts'));
+        setStaleKeys((prev) => new Set(prev).add("accounts"));
         return cacheRef.current.accounts.data;
       }
       throw e;
@@ -142,7 +160,16 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
   }, [fetchAccounts]);
 
   return (
-    <DataCacheContext.Provider value={{ getSchedule, getAccounts, invalidate, isStale, refresh, staleKeys }}>
+    <DataCacheContext.Provider
+      value={{
+        getSchedule,
+        getAccounts,
+        invalidate,
+        isStale,
+        refresh,
+        staleKeys,
+      }}
+    >
       {children}
     </DataCacheContext.Provider>
   );
@@ -150,6 +177,7 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
 
 export function useDataCache(): DataCacheContextValue {
   const ctx = useContext(DataCacheContext);
-  if (!ctx) throw new Error('useDataCache must be used within DataCacheProvider');
+  if (!ctx)
+    throw new Error("useDataCache must be used within DataCacheProvider");
   return ctx;
 }

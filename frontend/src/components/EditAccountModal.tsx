@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { AccountSummary, UpdateAccountRequest } from '../types';
+import { useEffect, useState } from "react";
+import type { AccountSummary, UpdateAccountRequest } from "../types";
 
 interface EditAccountModalProps {
   account: AccountSummary;
@@ -8,13 +8,22 @@ interface EditAccountModalProps {
   saving: boolean;
 }
 
-export function EditAccountModal({ account, onSave, onCancel, saving }: EditAccountModalProps) {
+export function EditAccountModal({
+  account,
+  onSave,
+  onCancel,
+  saving,
+}: EditAccountModalProps) {
   const [form, setForm] = useState({
     displayName: account.displayName,
     phone: account.phone,
   });
-  const [formErrors, setFormErrors] = useState<Partial<Record<keyof UpdateAccountRequest, string>>>({});
-  const [touched, setTouched] = useState<Partial<Record<keyof UpdateAccountRequest, boolean>>>({});
+  const [formErrors, setFormErrors] = useState<
+    Partial<Record<keyof UpdateAccountRequest, string>>
+  >({});
+  const [touched, setTouched] = useState<
+    Partial<Record<keyof UpdateAccountRequest, boolean>>
+  >({});
 
   useEffect(() => {
     setForm({ displayName: account.displayName, phone: account.phone });
@@ -22,13 +31,18 @@ export function EditAccountModal({ account, onSave, onCancel, saving }: EditAcco
     setTouched({});
   }, [account]);
 
-  function validateField(field: keyof UpdateAccountRequest, value: string): string | undefined {
+  function validateField(
+    field: keyof UpdateAccountRequest,
+    value: string,
+  ): string | undefined {
     switch (field) {
-      case 'displayName':
-        return value.length < 2 ? 'Nome deve ter pelo menos 2 caracteres' : undefined;
-      case 'phone':
-        if (!value) return 'Telemóvel é obrigatório';
-        if (!/^\d{9}$/.test(value)) return 'Telemóvel deve ter 9 dígitos';
+      case "displayName":
+        return value.length < 2
+          ? "Nome deve ter pelo menos 2 caracteres"
+          : undefined;
+      case "phone":
+        if (!value) return "Telemóvel é obrigatório";
+        if (!/^\d{9}$/.test(value)) return "Telemóvel deve ter 9 dígitos";
         return undefined;
       default:
         return undefined;
@@ -67,19 +81,23 @@ export function EditAccountModal({ account, onSave, onCancel, saving }: EditAcco
   }
 
   const isFormValid =
-    form.displayName.length >= 2 &&
-    /^\d{9}$/.test(form.phone);
+    form.displayName.length >= 2 && /^\d{9}$/.test(form.phone);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onCancel}
+      />
       <div className="relative bg-slate-800 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-sm p-6 scale-in border border-slate-700/50">
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
             <PencilIcon className="w-7 h-7 text-emerald-400" />
           </div>
           <h2 className="text-white text-xl font-bold">Editar conta</h2>
-          <p className="text-slate-400 text-sm mt-1">Altere os dados da conta</p>
+          <p className="text-slate-400 text-sm mt-1">
+            Altere os dados da conta
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,8 +105,8 @@ export function EditAccountModal({ account, onSave, onCancel, saving }: EditAcco
             label="Nome de apresentação"
             placeholder="Ex: João Silva"
             value={form.displayName}
-            onChange={(v) => handleFieldChange('displayName', v)}
-            onBlur={() => handleFieldBlur('displayName')}
+            onChange={(v) => handleFieldChange("displayName", v)}
+            onBlur={() => handleFieldBlur("displayName")}
             error={touched.displayName ? formErrors.displayName : undefined}
             icon={<UserIcon className="w-4 h-4" />}
             required
@@ -99,8 +117,8 @@ export function EditAccountModal({ account, onSave, onCancel, saving }: EditAcco
             placeholder="912345678"
             type="tel"
             value={form.phone}
-            onChange={(v) => handleFieldChange('phone', v.replace(/\D/g, ''))}
-            onBlur={() => handleFieldBlur('phone')}
+            onChange={(v) => handleFieldChange("phone", v.replace(/\D/g, ""))}
+            onBlur={() => handleFieldBlur("phone")}
             error={touched.phone ? formErrors.phone : undefined}
             icon={<PhoneIcon className="w-4 h-4" />}
             maxLength={9}
@@ -123,8 +141,7 @@ export function EditAccountModal({ account, onSave, onCancel, saving }: EditAcco
             >
               {saving ? (
                 <>
-                  <SpinnerIcon className="w-5 h-5 animate-spin" />
-                  A guardar...
+                  <SpinnerIcon className="w-5 h-5 animate-spin" />A guardar...
                 </>
               ) : (
                 <>
@@ -156,7 +173,7 @@ interface FormFieldProps {
 function FormField({
   label,
   placeholder,
-  type = 'text',
+  type = "text",
   value,
   onChange,
   onBlur,
@@ -185,11 +202,11 @@ function FormField({
           onBlur={onBlur}
           maxLength={maxLength}
           className={`w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200 ${
-            icon ? 'pl-10' : ''
+            icon ? "pl-10" : ""
           } ${
             error
-              ? 'ring-2 ring-rose-500/50 focus:ring-rose-500'
-              : 'ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50'
+              ? "ring-2 ring-rose-500/50 focus:ring-rose-500"
+              : "ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
           }`}
         />
       </div>
@@ -205,40 +222,90 @@ function FormField({
 
 function PencilIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
     </svg>
   );
 }
 
 function UserIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
     </svg>
   );
 }
 
 function PhoneIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+      />
     </svg>
   );
 }
 
 function AlertIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   );
 }
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 }
@@ -246,8 +313,19 @@ function CheckIcon({ className }: { className?: string }) {
 function SpinnerIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
     </svg>
   );
 }

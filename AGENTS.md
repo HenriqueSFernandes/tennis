@@ -40,9 +40,33 @@ make release  # build + push
 
 ## Testing and Linting
 
-**There are no tests, no test runner, and no linter configured in this project.** There is no Jest, Vitest, ESLint, or Prettier. Do not add test or lint scripts without explicit instruction.
+**There are no tests configured in this project.** There is no Jest or Vitest.
 
-The closest to a validation step is the TypeScript compiler:
+**Biome** is configured for formatting and linting in both workspaces.
+
+```bash
+# Format files (writes changes)
+npm run format                    # Both workspaces
+npm run format --workspace=api    # API only
+npm run format --workspace=frontend  # Frontend only
+
+# Check formatting without writing
+npm run format:check              # Both workspaces
+npm run format:check --workspace=api
+npm run format:check --workspace=frontend
+```
+
+CI runs `format:check` on pull requests (see `.github/workflows/lint.yml`).
+
+**Disabled rules** (intentional, not bugs):
+- `noUnknownAtRules` — Tailwind `@tailwind` directives
+- `useLiteralKeys` (api only) — bracket notation required for `noUncheckedIndexedAccess`
+- `noNonNullAssertion` (api only) — `!` assertions used where value is guaranteed
+- `noSvgWithoutTitle`, `useButtonType`, `noLabelWithoutControl`, `noAutofocus` — a11y rules need manual fixing
+- `noStaticElementInteractions`, `useKeyWithClickEvents` — modal backdrop divs
+- `useExhaustiveDependencies` (frontend only) — local function dependencies pattern
+
+Validation via TypeScript compiler:
 
 ```bash
 # From api/:
@@ -108,15 +132,16 @@ Both workspaces use strict TypeScript. Key settings:
 
 ### Formatting
 
-There is no Prettier config; follow the existing style observed in the codebase:
+Biome enforces consistent formatting. Key settings:
 - 2-space indentation
-- Single quotes for strings in TypeScript/TSX
+- Double quotes in JavaScript/TypeScript
 - Semicolons at end of statements
 - Trailing commas in multi-line arrays/objects
-- Use section comment banners to divide long files into logical sections:
-  ```ts
-  // ── Section Name ──────────────────────────────────────────────────
-  ```
+
+Use section comment banners to divide long files into logical sections:
+```ts
+// ── Section Name ──────────────────────────────────────────────────
+```
 
 ### React Components
 
