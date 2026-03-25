@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import "dotenv/config";
+import * as ics from "ics";
 import {
   addAccount,
   deleteAccount,
@@ -298,6 +299,132 @@ app.delete("/api/book", async (c) => {
     return c.json({ error: result.message ?? "Cancel failed" }, 400);
   }
   return c.json({ ok: true });
+});
+
+// ── Helper functions for iCal export ──────────────────────────────────────────
+
+function parseDateTime(dateStr: string, timeStr: string): Date {
+  const [dd = 1, mm = 1, yyyy = 1970] = dateStr.split("-").map(Number);
+  const [hh = 0, min = 0] = timeStr.split(":").map(Number);
+  return new Date(yyyy, mm - 1, dd, hh, min);
+}
+
+function dateToIcsArray(date: Date): ics.DateArray {
+  return [
+    date.getFullYear(),
+    date.getMonth() + 1,
+    date.getDate(),
+    date.getHours(),
+    date.getMinutes(),
+  ];
+}
+
+interface BookingWithAccount {
+  accountId: string;
+  username: string;
+  displayName: string;
+  phone: string;
+  courtId: number;
+  date: string;
+  time: string;
+  nome: string;
+}
+
+async function fetchAllBookings(
+  appPassword: string,
+): Promise<BookingWithAccount[]> {
+  const accounts = listAccounts(db);
+
+  const results = await Promise.allSettled(
+    accounts.flatMap((acc) =>
+      [1, 2].map(async (courtId) => {
+        const stored = getStoredAccount(db, acc.id);
+        if (!stored) return null;
+        const pwd = await getDecryptedPassword(db, acc.id, appPassword);
+        if (!pwd) return null;
+        const current = await getCurrentBooking(
+          db,
+          acc.id,
+          stored.username,
+          pwd,
+          courtId,
+        );
+        if (!current) return null;
+        return {
+          accountId: acc.id,
+          username: stored.username,
+          displayName: stored.displayName,
+          phone: stored.phone,
+          courtId,
+          date: current.date,
+          time: current.time,
+          nome: current.nome,
+        };
+      }),
+    ),
+  );
+
+  return results
+    .filter(
+      (r): r is PromiseFulfilledResult<BookingWithAccount | null> =>
+        r.status === "fulfilled",
+    )
+    .map((r) => r.value)
+    .filter((booking): booking is BookingWithAccount => booking !== null);
+}
+
+function generateIcsContent(bookings: BookingWithAccount[]): string {
+  const events: ics.EventAttributes[] = bookings.map((booking) => {
+    const startDate = parseDateTime(booking.date, booking.time);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+    return {
+      start: dateToIcsArray(startDate),
+      end: dateToIcsArray(endDate),
+      title: `Tennis Court ${booking.courtId}`,
+      location: "Rio Tinto",
+      description: `Court ${booking.courtId} booking\nAccount: ${booking.displayName} (${booking.username})\nPhone: ${booking.phone}`,
+      uid: `${booking.accountId}-${booking.courtId}-${booking.date.replace(/-/g, "")}-${booking.time.replace(/:/g, "")}@riotinto.pt`,
+    };
+  });
+
+  const { error, value } = ics.createEvents(events);
+  if (error || !value) {
+    throw new Error(error ? String(error) : "Failed to generate ICS file");
+  }
+
+  return value;
+}
+
+// ── GET /api/bookings/export ──────────────────────────────────────────────────
+app.get("/api/bookings/export", async (c) => {
+  const appPassword = process.env["APP_PASSWORD"]!;
+  const accountId = c.req.query("accountId");
+
+  try {
+    let bookings = await fetchAllBookings(appPassword);
+
+    // Filter by accountId if specified
+    if (accountId) {
+      bookings = bookings.filter((b) => b.accountId === accountId);
+    }
+
+    if (bookings.length === 0) {
+      return c.json({ error: "No bookings found" }, 404);
+    }
+
+    const icsContent = generateIcsContent(bookings);
+
+    c.header("Content-Type", "text/calendar; charset=utf-8");
+    c.header(
+      "Content-Disposition",
+      'attachment; filename="riotinto-bookings.ics"',
+    );
+    return c.body(icsContent);
+  } catch (e) {
+    console.error("[export] error generating ICS:", e);
+    return c.json({ error: "Failed to generate calendar file" }, 500);
+  }
 });
 
 // ── Health check ──────────────────────────────────────────────────────────────
