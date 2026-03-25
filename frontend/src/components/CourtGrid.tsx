@@ -211,7 +211,6 @@ export function CourtGrid({
                       >
                         {slot?.isOurs ? (
                           <div className="flex flex-col items-center gap-0.5">
-                            <CheckIcon className="w-3.5 h-3.5" />
                             <span className="text-[10px] opacity-80 truncate max-w-full">
                               {
                                 getAccountName(slot.ourAccountId ?? "").split(
@@ -221,7 +220,18 @@ export function CourtGrid({
                             </span>
                           </div>
                         ) : slot?.bookedBy ? (
-                          <span className="w-2 h-2 rounded-full bg-rose-400/60" />
+                          slot.bookedByName &&
+                          slot.bookedByName !== "**" &&
+                          slot.bookedByName.trim() !== "" ? (
+                            <div className="flex flex-col items-center justify-center gap-0.5">
+                              <span className="w-2 h-2 rounded-full bg-rose-400/60" />
+                              <span className="text-[10px] opacity-60 truncate max-w-full text-rose-300/60">
+                                {slot.bookedByName.split(" ")[0]}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="w-2 h-2 rounded-full bg-rose-400/60" />
+                          )
                         ) : slot ? (
                           past ? (
                             <span className="text-slate-600">—</span>
