@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { exportBookings } from "../api";
 import { useDataCache } from "../DataCacheContext";
 import type { AccountSummary, CurrentBookingInfo } from "../types";
 
@@ -21,6 +22,7 @@ export function Dashboard() {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   async function loadData() {
     if (!password) return;
@@ -90,6 +92,27 @@ export function Dashboard() {
     await loadData();
   };
 
+  const handleExport = async () => {
+    if (!password) return;
+    setExporting(true);
+    setError("");
+    try {
+      const blob = await exportBookings(password);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "riotinto-bookings.ics";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao exportar calendário");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const isDashboardStale =
     staleKeys.has("schedule:0") ||
     staleKeys.has("schedule:1") ||
@@ -110,14 +133,28 @@ export function Dashboard() {
               : "Nenhuma reserva ativa"}
           </p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={loading}
-          className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isDashboardStale && !loading ? "animate-pulse" : ""}`}
-          title="Atualizar"
-        >
-          <RefreshIcon className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={exporting || bookings.length === 0}
+            className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
+            title="Exportar para calendário"
+          >
+            <CalendarExportIcon
+              className={`w-5 h-5 ${exporting ? "animate-pulse" : ""}`}
+            />
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed btn-press ${isDashboardStale && !loading ? "animate-pulse" : ""}`}
+            title="Atualizar"
+          >
+            <RefreshIcon
+              className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
+            />
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -436,6 +473,30 @@ function CalendarIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+  );
+}
+
+function CalendarExportIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 11v6m-3-3l3 3 3-3"
       />
     </svg>
   );

@@ -114,6 +114,31 @@ export async function getBookings(
   return request<CurrentBookingInfo[]>("/bookings", password);
 }
 
+export async function exportBookings(
+  password: string,
+  accountId?: string,
+): Promise<Blob> {
+  const queryParams = accountId ? `?accountId=${accountId}` : "";
+  const resp = await fetch(`${API_BASE}/bookings/export${queryParams}`, {
+    headers: {
+      "X-App-Password": password,
+    },
+  });
+
+  if (!resp.ok) {
+    let message = `HTTP ${resp.status}`;
+    try {
+      const body = (await resp.json()) as { error?: string };
+      if (body.error) message = body.error;
+    } catch {
+      // ignore parse error
+    }
+    throw new ApiError(resp.status, message);
+  }
+
+  return resp.blob();
+}
+
 export async function book(password: string, data: BookRequest): Promise<void> {
   await request<{ ok: boolean }>("/book", password, {
     method: "POST",
