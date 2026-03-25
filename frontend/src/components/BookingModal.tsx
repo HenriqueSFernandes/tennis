@@ -6,6 +6,7 @@ interface BookingModalProps {
   slot: ScheduleSlot;
   courtName: string;
   accounts: AccountSummary[];
+  preselectedAccountId?: string;
   onConfirm: (accountId: string) => Promise<void>;
   onCancel: () => void;
 }
@@ -24,10 +25,13 @@ export function BookingModal({
   slot,
   courtName,
   accounts,
+  preselectedAccountId,
   onConfirm,
   onCancel,
 }: BookingModalProps) {
-  const [selectedAccount, setSelectedAccount] = useState(accounts[0]?.id ?? "");
+  const [selectedAccount, setSelectedAccount] = useState(
+    preselectedAccountId ?? accounts[0]?.id ?? "",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

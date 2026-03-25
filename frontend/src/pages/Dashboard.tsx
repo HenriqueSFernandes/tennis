@@ -328,6 +328,7 @@ export function Dashboard() {
           courtId: fav.courtId,
           dayOfWeek: fav.dayOfWeek,
           time: fav.time,
+          accountId: fav.accountId,
         },
       },
     });

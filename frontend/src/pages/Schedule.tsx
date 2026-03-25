@@ -43,6 +43,9 @@ export function Schedule() {
   // Modal state
   const [bookSlot, setBookSlot] = useState<ScheduleSlot | null>(null);
   const [bookCourtId, setBookCourtId] = useState<number | null>(null);
+  const [bookPreselectedAccountId, setBookPreselectedAccountId] = useState<
+    string | undefined
+  >(undefined);
   const [cancelSlot, setCancelSlot] = useState<ScheduleSlot | null>(null);
   const [cancelCourtId, setCancelCourtId] = useState<number | null>(null);
   const [addFavoriteSlot, setAddFavoriteSlot] = useState<ScheduleSlot | null>(
@@ -87,11 +90,16 @@ export function Schedule() {
   useEffect(() => {
     if (!schedule || loading) return;
     const state = location.state as {
-      preselectedSlot?: { courtId: number; dayOfWeek: number; time: string };
+      preselectedSlot?: {
+        courtId: number;
+        dayOfWeek: number;
+        time: string;
+        accountId?: string;
+      };
     } | null;
     if (!state?.preselectedSlot) return;
 
-    const { courtId, dayOfWeek, time } = state.preselectedSlot;
+    const { courtId, dayOfWeek, time, accountId } = state.preselectedSlot;
     const court = schedule.courts.find((c) => c.courtId === courtId);
     if (!court) return;
 
@@ -107,6 +115,7 @@ export function Schedule() {
     if (!slot.isOurs && !slot.bookedBy) {
       setBookSlot(slot);
       setBookCourtId(courtId);
+      setBookPreselectedAccountId(accountId);
     }
   }, [schedule, loading, location.state]);
 
@@ -179,6 +188,7 @@ export function Schedule() {
     invalidate(`schedule:${weekOffset}`);
     setBookSlot(null);
     setBookCourtId(null);
+    setBookPreselectedAccountId(undefined);
     await loadData();
   }
 
@@ -340,8 +350,12 @@ export function Schedule() {
           slot={bookSlot}
           courtName={bookSlotCourt.courtName}
           accounts={accounts}
+          preselectedAccountId={bookPreselectedAccountId}
           onConfirm={handleBook}
-          onCancel={() => setBookSlot(null)}
+          onCancel={() => {
+            setBookSlot(null);
+            setBookPreselectedAccountId(undefined);
+          }}
         />
       )}
 
