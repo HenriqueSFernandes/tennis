@@ -182,24 +182,28 @@ export function Dashboard() {
       let isBookedByOthers = false;
       let isOurBooking = false;
 
-      for (const sched of schedules) {
-        const court = sched.courts.find((c) => c.courtId === fav.courtId);
-        if (!court) continue;
-        const slot = court.slots.find(
-          (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
-        );
-        if (!slot) continue;
+      // Determine which week to check: if target day has passed this week, check next week
+      const targetWeekOffset = getWeekOffsetForDay(fav.dayOfWeek);
+      const sched = schedules.find((s) => s.weekOffset === targetWeekOffset);
 
-        if (slot.isOurs) {
-          isOurBooking = true;
-          isAvailable = false;
-        } else if (slot.bookedBy) {
-          isBookedByOthers = true;
-          isAvailable = false;
-        } else {
-          isAvailable = true;
+      if (sched) {
+        const court = sched.courts.find((c) => c.courtId === fav.courtId);
+        if (court) {
+          const slot = court.slots.find(
+            (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
+          );
+          if (slot) {
+            if (slot.isOurs) {
+              isOurBooking = true;
+              isAvailable = false;
+            } else if (slot.bookedBy) {
+              isBookedByOthers = true;
+              isAvailable = false;
+            } else {
+              isAvailable = true;
+            }
+          }
         }
-        break;
       }
 
       return {
