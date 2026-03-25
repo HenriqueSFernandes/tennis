@@ -102,6 +102,7 @@ export interface WeekAvailability {
   isAvailable: boolean;
   isBookedByOthers: boolean;
   isOurBooking: boolean;
+  isPast: boolean;
   weekOffset: number; // 0 = this week, 1 = next week
   date: string; // "DD-MM-YYYY"
 }

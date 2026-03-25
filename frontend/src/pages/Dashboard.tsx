@@ -151,16 +151,20 @@ export function Dashboard() {
   function computeDateForWeek(weekOffset: number, dayOfWeek: number): string {
     const today = new Date();
     const todayDay = today.getDay();
-    const todayMon = todayDay === 0 ? 6 : todayDay - 1;
+    const todayMon = todayDay === 0 ? 6 : todayDay - 1; // Convert to Mon=0, Sun=6
 
-    // Find the first day of the target week (Monday)
-    const daysSinceMonday = (todayMon + 1) % 7;
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - daysSinceMonday - weekOffset * 7);
+    // Find Monday of current week
+    const daysSinceMonday = todayMon;
+    const startOfCurrentWeek = new Date(today);
+    startOfCurrentWeek.setDate(today.getDate() - daysSinceMonday);
+
+    // Go to Monday of target week (offset 0 = this week, offset 1 = next week, etc.)
+    const startOfTargetWeek = new Date(startOfCurrentWeek);
+    startOfTargetWeek.setDate(startOfCurrentWeek.getDate() + weekOffset * 7);
 
     // Add days to reach target day
-    const targetDate = new Date(startOfWeek);
-    targetDate.setDate(startOfWeek.getDate() + dayOfWeek);
+    const targetDate = new Date(startOfTargetWeek);
+    targetDate.setDate(startOfTargetWeek.getDate() + dayOfWeek);
 
     return `${String(targetDate.getDate()).padStart(2, "0")}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${targetDate.getFullYear()}`;
   }
@@ -168,17 +172,28 @@ export function Dashboard() {
   function getWeekAvailability(
     fav: Favorite,
     weekOffset: number,
+    dateStr: string,
   ): {
     isAvailable: boolean;
     isBookedByOthers: boolean;
     isOurBooking: boolean;
+    isPast: boolean;
   } {
+    // Check if date is in the past
+    const [day, month, year] = dateStr.split("-").map(Number);
+    const slotDate = new Date(year ?? 0, (month ?? 1) - 1, day ?? 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPast = slotDate.getTime() < today.getTime();
+
     const sched = schedules.find((s) => s.weekOffset === weekOffset);
     if (!sched) {
+      // No data for this week - if date is in past, mark as past
       return {
         isAvailable: false,
         isBookedByOthers: false,
         isOurBooking: false,
+        isPast,
       };
     }
 
@@ -188,6 +203,7 @@ export function Dashboard() {
         isAvailable: false,
         isBookedByOthers: false,
         isOurBooking: false,
+        isPast,
       };
     }
 
@@ -195,10 +211,22 @@ export function Dashboard() {
       (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
     );
     if (!slot) {
+      // Slot not found in schedule - if date is in past, mark as past
       return {
         isAvailable: false,
         isBookedByOthers: false,
         isOurBooking: false,
+        isPast,
+      };
+    }
+
+    // If slot date is in the past, it's not available
+    if (isPast) {
+      return {
+        isAvailable: false,
+        isBookedByOthers: false,
+        isOurBooking: false,
+        isPast: true,
       };
     }
 
@@ -207,6 +235,7 @@ export function Dashboard() {
         isAvailable: false,
         isBookedByOthers: false,
         isOurBooking: true,
+        isPast: false,
       };
     }
     if (slot.bookedBy) {
@@ -214,18 +243,24 @@ export function Dashboard() {
         isAvailable: false,
         isBookedByOthers: true,
         isOurBooking: false,
+        isPast: false,
       };
     }
-    return { isAvailable: true, isBookedByOthers: false, isOurBooking: false };
+    return {
+      isAvailable: true,
+      isBookedByOthers: false,
+      isOurBooking: false,
+      isPast: false,
+    };
   }
 
   function computeFavoritesWithAvailability(): FavoriteWithAvailability[] {
     const withAvailability = favorites.map((fav) => {
-      const thisWeekAvail = getWeekAvailability(fav, 0);
-      const nextWeekAvail = getWeekAvailability(fav, 1);
-
       const thisWeekDate = computeDateForWeek(0, fav.dayOfWeek);
       const nextWeekDate = computeDateForWeek(1, fav.dayOfWeek);
+
+      const thisWeekAvail = getWeekAvailability(fav, 0, thisWeekDate);
+      const nextWeekAvail = getWeekAvailability(fav, 1, nextWeekDate);
 
       // nextDate for sorting: earlier of the two
       const [aDay, aMonth, aYear] = thisWeekDate.split("-").map(Number);
