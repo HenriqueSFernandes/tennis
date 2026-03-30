@@ -1,20 +1,34 @@
+// Dashboard page
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import {
-  deleteFavorite,
-  exportBookings,
-  getFavorites,
-  updateFavorite,
+  exportBookings as apiExportBookings,
+  getFavorites as apiGetFavorites,
 } from "../api";
 import { BulkBookModal } from "../components/BulkBookModal";
 import { FavoritesSection } from "../components/FavoritesSection";
+import {
+  ArrowRightIcon,
+  BookingCardSkeleton,
+  CalendarExportIcon,
+  CalendarIcon,
+  CheckIcon,
+  EmptyState,
+  ErrorAlert,
+  PlusIcon,
+  RefreshIcon,
+  UsersIcon,
+} from "../components/ui";
+import { computeDateForWeek, isDateToday, parseDate } from "../core/utils";
 import { useDataCache } from "../DataCacheContext";
 import type {
   AccountSummary,
   CurrentBookingInfo,
   Favorite,
   FavoriteWithAvailability,
+  WeekAvailability,
 } from "../types";
 
 const _DAY_NAMES = [
@@ -27,6 +41,20 @@ const _DAY_NAMES = [
   "Domingo",
 ];
 
+interface ScheduleData {
+  weekOffset: number;
+  courts: {
+    courtId: number;
+    slots: {
+      dayIndex: number;
+      time: string;
+      bookedBy: string | null;
+      isOurs: boolean;
+      ourAccountId: string | null;
+    }[];
+  }[];
+}
+
 export function Dashboard() {
   const { password } = useAuth();
   const navigate = useNavigate();
@@ -34,20 +62,7 @@ export function Dashboard() {
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [schedules, setSchedules] = useState<
-    {
-      weekOffset: number;
-      courts: {
-        courtId: number;
-        slots: {
-          dayIndex: number;
-          time: string;
-          bookedBy: string | null;
-          isOurs: boolean;
-        }[];
-      }[];
-    }[]
-  >([]);
+  const [schedules, setSchedules] = useState<ScheduleData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -63,7 +78,7 @@ export function Dashboard() {
         getSchedule(1),
         getSchedule(2),
         getAccounts(),
-        getFavorites(password),
+        apiGetFavorites(password),
       ]);
 
       setSchedules([
@@ -114,7 +129,7 @@ export function Dashboard() {
       setAccounts(a);
       setFavorites(f);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar dados");
+      setError(e instanceof Error ? e.message : "Error ao carregar dados");
     } finally {
       setLoading(false);
     }
@@ -134,7 +149,7 @@ export function Dashboard() {
     setExporting(true);
     setError("");
     try {
-      const blob = await exportBookings(password);
+      const blob = await apiExportBookings(password);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -144,44 +159,74 @@ export function Dashboard() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao exportar calendário");
+      setError(e instanceof Error ? e.message : "Error ao exportar calendário");
     } finally {
       setExporting(false);
     }
   };
 
-  function computeDateForWeek(weekOffset: number, dayOfWeek: number): string {
-    const today = new Date();
-    const todayDay = today.getDay();
-    const todayMon = todayDay === 0 ? 6 : todayDay - 1; // Convert to Mon=0, Sun=6
+  function computeFavoritesWithAvailability(): FavoriteWithAvailability[] {
+    const withAvailability = favorites.map((fav) => {
+      const thisWeekDate = computeDateForWeek(0, fav.dayOfWeek);
+      const nextWeekDate = computeDateForWeek(1, fav.dayOfWeek);
 
-    // Find Monday of current week
-    const daysSinceMonday = todayMon;
-    const startOfCurrentWeek = new Date(today);
-    startOfCurrentWeek.setDate(today.getDate() - daysSinceMonday);
+      const thisWeekAvail = getWeekAvailability(fav, 0, thisWeekDate);
+      const nextWeekAvail = getWeekAvailability(fav, 1, nextWeekDate);
 
-    // Go to Monday of target week (offset 0 = this week, offset 1 = next week, etc.)
-    const startOfTargetWeek = new Date(startOfCurrentWeek);
-    startOfTargetWeek.setDate(startOfCurrentWeek.getDate() + weekOffset * 7);
+      const aDate = parseDate(thisWeekDate);
+      const bDate = parseDate(nextWeekDate);
+      const nextDate =
+        aDate && bDate
+          ? aDate <= bDate
+            ? thisWeekDate
+            : nextWeekDate
+          : thisWeekDate;
 
-    // Add days to reach target day
-    const targetDate = new Date(startOfTargetWeek);
-    targetDate.setDate(startOfTargetWeek.getDate() + dayOfWeek);
+      return {
+        ...fav,
+        thisWeek: {
+          ...thisWeekAvail,
+          weekOffset: 0,
+          date: thisWeekDate,
+        },
+        nextWeek: {
+          ...nextWeekAvail,
+          weekOffset: 1,
+          date: nextWeekDate,
+        },
+        nextDate,
+      };
+    });
 
-    return `${String(targetDate.getDate()).padStart(2, "0")}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${targetDate.getFullYear()}`;
+    return withAvailability.sort((a, b) => {
+      const aDate = parseDate(a.nextDate);
+      const bDate = parseDate(b.nextDate);
+
+      if (aDate && bDate && aDate.getTime() !== bDate.getTime()) {
+        return aDate.getTime() - bDate.getTime();
+      }
+
+      if (a.time !== b.time) {
+        return a.time.localeCompare(b.time);
+      }
+
+      if (a.courtId !== b.courtId) {
+        return a.courtId - b.courtId;
+      }
+
+      const aAccount = accounts.find((acc) => acc.id === a.accountId);
+      const bAccount = accounts.find((acc) => acc.id === b.accountId);
+      const aName = aAccount?.displayName ?? "";
+      const bName = bAccount?.displayName ?? "";
+      return aName.localeCompare(bName);
+    });
   }
 
   function getWeekAvailability(
     fav: Favorite,
     weekOffset: number,
     dateStr: string,
-  ): {
-    isAvailable: boolean;
-    isBookedByOthers: boolean;
-    isOurBooking: boolean;
-    isPast: boolean;
-  } {
-    // Check if date is in the past
+  ): Omit<WeekAvailability, "weekOffset" | "date"> {
     const [day, month, year] = dateStr.split("-").map(Number);
     const slotDate = new Date(year ?? 0, (month ?? 1) - 1, day ?? 0);
     const today = new Date();
@@ -190,7 +235,6 @@ export function Dashboard() {
 
     const sched = schedules.find((s) => s.weekOffset === weekOffset);
     if (!sched) {
-      // No data for this week - if date is in past, mark as past
       return {
         isAvailable: false,
         isBookedByOthers: false,
@@ -213,7 +257,6 @@ export function Dashboard() {
       (s) => s.dayIndex === fav.dayOfWeek && s.time === fav.time,
     );
     if (!slot) {
-      // Slot not found in schedule - if date is in past, mark as past
       return {
         isAvailable: false,
         isBookedByOthers: false,
@@ -222,7 +265,6 @@ export function Dashboard() {
       };
     }
 
-    // If slot date is in the past, it's not available
     if (isPast) {
       return {
         isAvailable: false,
@@ -256,68 +298,6 @@ export function Dashboard() {
     };
   }
 
-  function computeFavoritesWithAvailability(): FavoriteWithAvailability[] {
-    const withAvailability = favorites.map((fav) => {
-      const thisWeekDate = computeDateForWeek(0, fav.dayOfWeek);
-      const nextWeekDate = computeDateForWeek(1, fav.dayOfWeek);
-
-      const thisWeekAvail = getWeekAvailability(fav, 0, thisWeekDate);
-      const nextWeekAvail = getWeekAvailability(fav, 1, nextWeekDate);
-
-      // nextDate for sorting: earlier of the two
-      const [aDay, aMonth, aYear] = thisWeekDate.split("-").map(Number);
-      const [bDay, bMonth, bYear] = nextWeekDate.split("-").map(Number);
-      const aDate = new Date(aYear ?? 0, (aMonth ?? 1) - 1, aDay ?? 0);
-      const bDate = new Date(bYear ?? 0, (bMonth ?? 1) - 1, bDay ?? 0);
-      const nextDate = aDate <= bDate ? thisWeekDate : nextWeekDate;
-
-      return {
-        ...fav,
-        thisWeek: {
-          ...thisWeekAvail,
-          weekOffset: 0,
-          date: thisWeekDate,
-        },
-        nextWeek: {
-          ...nextWeekAvail,
-          weekOffset: 1,
-          date: nextWeekDate,
-        },
-        nextDate,
-      };
-    });
-
-    return withAvailability.sort((a, b) => {
-      // Parse nextDate to compare
-      const [aDay, aMonth, aYear] = a.nextDate.split("-").map(Number);
-      const [bDay, bMonth, bYear] = b.nextDate.split("-").map(Number);
-      const aDate = new Date(aYear ?? 0, (aMonth ?? 1) - 1, aDay ?? 0);
-      const bDate = new Date(bYear ?? 0, (bMonth ?? 1) - 1, bDay ?? 0);
-
-      // 1. Sort by date
-      if (aDate.getTime() !== bDate.getTime()) {
-        return aDate.getTime() - bDate.getTime();
-      }
-
-      // 2. Sort by time
-      if (a.time !== b.time) {
-        return a.time.localeCompare(b.time);
-      }
-
-      // 3. Sort by court
-      if (a.courtId !== b.courtId) {
-        return a.courtId - b.courtId;
-      }
-
-      // 4. Sort by account name
-      const aAccount = accounts.find((acc) => acc.id === a.accountId);
-      const bAccount = accounts.find((acc) => acc.id === b.accountId);
-      const aName = aAccount?.displayName ?? "";
-      const bName = bAccount?.displayName ?? "";
-      return aName.localeCompare(bName);
-    });
-  }
-
   async function handleBookFavorite(
     fav: FavoriteWithAvailability,
     weekOffset: number,
@@ -336,15 +316,18 @@ export function Dashboard() {
 
   async function handleDeleteFavorite(id: string) {
     if (!password) return;
+    const { deleteFavorite } = await import("../api");
     await deleteFavorite(password, id);
-    const f = await getFavorites(password);
+    const f = await apiGetFavorites(password);
     setFavorites(f);
   }
 
   async function handleUpdateFavoriteName(id: string, name: string) {
     if (!password) return;
+    // Import directly to avoid circular dependency
+    const { updateFavorite } = await import("../api");
     await updateFavorite(password, id, { name });
-    const f = await getFavorites(password);
+    const f = await apiGetFavorites(password);
     setFavorites(f);
   }
 
@@ -353,8 +336,6 @@ export function Dashboard() {
     staleKeys.has("schedule:1") ||
     staleKeys.has("schedule:2") ||
     staleKeys.has("accounts");
-
-  const _bookedAccountsCount = new Set(bookings.map((b) => b.accountId)).size;
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
@@ -392,98 +373,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-200 rounded-xl p-4 text-sm flex items-start gap-3 animate-shake">
-          <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
-          {error}
-        </div>
-      )}
-
-      {/* Account Summary */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UsersIcon className="w-4 h-4 text-slate-500" />
-            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
-              Contas
-            </h2>
-          </div>
-          <Link
-            to="/accounts"
-            className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
-          >
-            Gerir
-            <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-
-        {accounts.length === 0 && !loading ? (
-          <EmptyState
-            icon={<UsersIcon className="w-8 h-8" />}
-            title="Nenhuma conta configurada"
-            description="Adicione contas riotinto.pt para começar a reservar campos."
-            action={
-              <Link
-                to="/accounts"
-                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
-              >
-                <PlusIcon className="w-4 h-4" />
-                Adicionar conta
-              </Link>
-            }
-          />
-        ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[1, 2].map((i) => (
-              <AccountCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {accounts.map((acc) => {
-              const hasBooking = bookings.some((b) => b.accountId === acc.id);
-              return (
-                <div
-                  key={acc.id}
-                  className={`group bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/50 card-hover ${
-                    hasBooking ? "ring-1 ring-emerald-500/30" : ""
-                  }`}
-                >
-                  <div
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
-                      hasBooking
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
-                        : "bg-slate-700"
-                    }`}
-                  >
-                    {acc.displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-semibold truncate">
-                      {acc.displayName}
-                    </p>
-                    <p className="text-slate-500 text-xs truncate">
-                      {acc.username}
-                    </p>
-                  </div>
-                  <div className="shrink-0">
-                    {hasBooking ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
-                        <CheckIcon className="w-3.5 h-3.5" />
-                        Ativa
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-700 text-slate-400 text-xs">
-                        Inativa
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {error && <ErrorAlert message={error} />}
 
       {/* Active Bookings */}
       <section className="space-y-3">
@@ -526,10 +416,10 @@ export function Dashboard() {
           />
         ) : (
           <div className="space-y-3">
-            {bookings.map((b, _i) => {
+            {bookings.map((b) => {
               const acc = accounts.find((a) => a.id === b.accountId);
               const [dd, mm] = b.booking.date.split("-");
-              const isToday = isDateToday(b.booking.date);
+              const today = isDateToday(b.booking.date);
 
               return (
                 <Link
@@ -546,7 +436,7 @@ export function Dashboard() {
                       <p className="text-white font-semibold">
                         Court {b.courtId}
                       </p>
-                      {isToday && (
+                      {today && (
                         <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium">
                           Hoje
                         </span>
@@ -601,221 +491,101 @@ export function Dashboard() {
           }}
         />
       )}
+
+      {/* Account Summary */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UsersIcon className="w-4 h-4 text-slate-500" />
+            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+              Contas
+            </h2>
+          </div>
+          <Link
+            to="/accounts"
+            className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+          >
+            Gerir
+            <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        {accounts.length === 0 && !loading ? (
+          <EmptyState
+            icon={<UsersIcon className="w-8 h-8" />}
+            title="Nenhuma conta configurada"
+            description="Adicione contas riotinto.pt para começar a reservar campos."
+            action={
+              <Link
+                to="/accounts"
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Adicionar conta
+              </Link>
+            }
+          />
+        ) : loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/30"
+              >
+                <div className="w-11 h-11 rounded-xl bg-slate-700 shimmer" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-slate-700 rounded-lg shimmer w-3/4" />
+                  <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {accounts.map((acc) => {
+              const hasBooking = bookings.some((b) => b.accountId === acc.id);
+              return (
+                <div
+                  key={acc.id}
+                  className={`group bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/50 card-hover ${
+                    hasBooking ? "ring-1 ring-emerald-500/30" : ""
+                  }`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
+                      hasBooking
+                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
+                        : "bg-slate-700"
+                    }`}
+                  >
+                    {acc.displayName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-semibold truncate">
+                      {acc.displayName}
+                    </p>
+                    <p className="text-slate-500 text-xs truncate">
+                      {acc.username}
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    {hasBooking ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
+                        <CheckIcon className="w-3.5 h-3.5" />
+                        Ativa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-700 text-slate-400 text-xs">
+                        Inativa
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
-  );
-}
-
-// Helper Components
-
-function EmptyState({
-  icon,
-  title,
-  description,
-  action,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-slate-800 mx-auto mb-4 flex items-center justify-center text-slate-600">
-        {icon}
-      </div>
-      <h3 className="text-white font-medium mb-1">{title}</h3>
-      <p className="text-slate-500 text-sm mb-4">{description}</p>
-      {action}
-    </div>
-  );
-}
-
-function AccountCardSkeleton() {
-  return (
-    <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/30">
-      <div className="w-11 h-11 rounded-xl bg-slate-700 shimmer" />
-      <div className="flex-1 space-y-2">
-        <div className="h-4 bg-slate-700 rounded-lg shimmer w-3/4" />
-        <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/2" />
-      </div>
-    </div>
-  );
-}
-
-function BookingCardSkeleton() {
-  return (
-    <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-4 border border-slate-700/30">
-      <div className="w-14 h-14 rounded-xl bg-slate-700 shimmer" />
-      <div className="flex-1 space-y-2">
-        <div className="h-4 bg-slate-700 rounded-lg shimmer w-1/3" />
-        <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/4" />
-        <div className="h-3 bg-slate-700 rounded-lg shimmer w-1/2" />
-      </div>
-    </div>
-  );
-}
-
-// Helper Functions
-
-function isDateToday(dateStr: string): boolean {
-  const [dd, mm, yyyy] = dateStr.split("-").map(Number);
-  const date = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 1);
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-}
-
-// Icon Components
-
-function RefreshIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-      />
-    </svg>
-  );
-}
-
-function AlertIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function UsersIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-      />
-    </svg>
-  );
-}
-
-function CalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  );
-}
-
-function CalendarExportIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 11v6m-3-3l3 3 3-3"
-      />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 5l7 7-7 7"
-      />
-    </svg>
-  );
-}
-
-function PlusIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 4v16m8-8H4"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
-    </svg>
   );
 }
