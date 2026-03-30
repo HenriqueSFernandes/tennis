@@ -84,7 +84,7 @@ export function Dashboard() {
                 displayName: acc?.displayName ?? slot.bookedBy ?? "",
                 courtId: court.courtId,
                 booking: {
-                  nome: slot.bookedByName ?? "",
+                  gnome: slot.bookedByName ?? "",
                   date: slot.date,
                   time: slot.time,
                 },
@@ -114,7 +114,7 @@ export function Dashboard() {
       setAccounts(a);
       setFavorites(f);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar dados");
+      setError(e instanceof Error ? e.message : "Error ao carregar dados");
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ export function Dashboard() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao exportar calendário");
+      setError(e instanceof Error ? e.message : "Error ao exportar calendário");
     } finally {
       setExporting(false);
     }
@@ -399,92 +399,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Account Summary */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UsersIcon className="w-4 h-4 text-slate-500" />
-            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
-              Contas
-            </h2>
-          </div>
-          <Link
-            to="/accounts"
-            className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
-          >
-            Gerir
-            <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-
-        {accounts.length === 0 && !loading ? (
-          <EmptyState
-            icon={<UsersIcon className="w-8 h-8" />}
-            title="Nenhuma conta configurada"
-            description="Adicione contas riotinto.pt para começar a reservar campos."
-            action={
-              <Link
-                to="/accounts"
-                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
-              >
-                <PlusIcon className="w-4 h-4" />
-                Adicionar conta
-              </Link>
-            }
-          />
-        ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[1, 2].map((i) => (
-              <AccountCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {accounts.map((acc) => {
-              const hasBooking = bookings.some((b) => b.accountId === acc.id);
-              return (
-                <div
-                  key={acc.id}
-                  className={`group bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/50 card-hover ${
-                    hasBooking ? "ring-1 ring-emerald-500/30" : ""
-                  }`}
-                >
-                  <div
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
-                      hasBooking
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
-                        : "bg-slate-700"
-                    }`}
-                  >
-                    {acc.displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-semibold truncate">
-                      {acc.displayName}
-                    </p>
-                    <p className="text-slate-500 text-xs truncate">
-                      {acc.username}
-                    </p>
-                  </div>
-                  <div className="shrink-0">
-                    {hasBooking ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
-                        <CheckIcon className="w-3.5 h-3.5" />
-                        Ativa
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-700 text-slate-400 text-xs">
-                        Inativa
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
       {/* Active Bookings */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -601,6 +515,92 @@ export function Dashboard() {
           }}
         />
       )}
+
+      {/* Account Summary */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UsersIcon className="w-4 h-4 text-slate-500" />
+            <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+              Contas
+            </h2>
+          </div>
+          <Link
+            to="/accounts"
+            className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+          >
+            Gerir
+            <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        {accounts.length === 0 && !loading ? (
+          <EmptyState
+            icon={<UsersIcon className="w-8 h-8" />}
+            title="Nenhuma conta configurada"
+            description="Adicione contas riotinto.pt para começar a reservar campos."
+            action={
+              <Link
+                to="/accounts"
+                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Adicionar conta
+              </Link>
+            }
+          />
+        ) : loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[1, 2].map((i) => (
+              <AccountCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {accounts.map((acc) => {
+              const hasBooking = bookings.some((b) => b.accountId === acc.id);
+              return (
+                <div
+                  key={acc.id}
+                  className={`group bg-slate-800 rounded-xl p-4 flex items-center gap-3 border border-slate-700/50 card-hover ${
+                    hasBooking ? "ring-1 ring-emerald-500/30" : ""
+                  }`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
+                      hasBooking
+                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
+                        : "bg-slate-700"
+                    }`}
+                  >
+                    {acc.displayName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-semibold truncate">
+                      {acc.displayName}
+                    </p>
+                    <p className="text-slate-500 text-xs truncate">
+                      {acc.username}
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    {hasBooking ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
+                        <CheckIcon className="w-3.5 h-3.5" />
+                        Ativa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-700 text-slate-400 text-xs">
+                        Inativa
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
