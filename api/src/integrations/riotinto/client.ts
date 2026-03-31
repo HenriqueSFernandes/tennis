@@ -21,10 +21,23 @@ const CALLBACK = "cb";
 // ── JSONP response parser ─────────────────────────────────────────────────────
 
 function parseJsonp(text: string): unknown {
-  const match = text.match(/^[^(]+\([\s\S]*\)\s*;?\s*$/);
-  if (!match || !match[1])
-    throw new Error(`Unexpected JSONP response: ${text.slice(0, 100)}`);
-  return JSON.parse(match[1]);
+  const firstParen = text.indexOf("(");
+  const lastParen = text.lastIndexOf(")");
+
+  if (firstParen === -1) {
+    throw new Error(
+      `No parenthesis found in JSONP response: ${text.slice(0, 100)}`,
+    );
+  }
+
+  if (lastParen === -1 || lastParen < firstParen) {
+    throw new Error(
+      `Truncated JSONP response (length=${text.length}, startsWithParen=${text.startsWith("(")}): ${text.slice(0, 200)}`,
+    );
+  }
+
+  const jsonStr = text.slice(firstParen + 1, lastParen);
+  return JSON.parse(jsonStr);
 }
 
 // ── Cookie helpers ────────────────────────────────────────────────────────────
@@ -170,7 +183,21 @@ async function jsonpPost(
     body: body.toString(),
   });
 
-  return parseJsonp(await resp.text());
+  const text = await resp.text();
+
+  if (!resp.ok) {
+    throw new Error(
+      `Riotinto request failed: ${resp.status} ${resp.statusText}`,
+    );
+  }
+
+  if (text.length < 10) {
+    throw new Error(
+      `Riotinto returned empty/too short response (${text.length} bytes)`,
+    );
+  }
+
+  return parseJsonp(text);
 }
 
 // ── getDadosLocal types ───────────────────────────────────────────────────────
@@ -278,7 +305,10 @@ export async function getCourtSchedule(
   const queryMondayOffset = queryDow === 0 ? -6 : 1 - queryDow;
   const queryMonday = new Date(targetDate);
   queryMonday.setDate(targetDate.getDate() + queryMondayOffset);
-  const isoDate = queryMonday.toISOString().slice(0, 10);
+  const queryMondayYear = queryMonday.getFullYear();
+  const queryMondayMonth = queryMonday.getMonth() + 1;
+  const queryMondayDay = queryMonday.getDate();
+  const isoDate = `${queryMondayYear}-${String(queryMondayMonth).padStart(2, "0")}-${String(queryMondayDay).padStart(2, "0")}`;
 
   const dadosRaw = (await jsonpPost(
     "/index.php?option=com_agenda&task=ajax.getDadosLocal&format=json",

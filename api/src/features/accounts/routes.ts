@@ -16,25 +16,30 @@ export async function handleListAccounts(c: Context) {
 }
 
 export async function handleAddAccount(c: Context) {
-  const body = await c.req.json<AddAccountRequest>();
-  const { username, password, displayName, phone } = body;
+  try {
+    const body = await c.req.json<AddAccountRequest>();
+    const { username, password, displayName, phone } = body;
 
-  if (!username || !password || !displayName || !phone) {
-    return c.json(
-      {
-        error:
-          "Missing required fields: username, password, displayName, phone",
-      },
-      400,
-    );
+    if (!username || !password || !displayName || !phone) {
+      return c.json(
+        {
+          error:
+            "Missing required fields: username, password, displayName, phone",
+        },
+        400,
+      );
+    }
+
+    if (!/^\d{9}$/.test(phone)) {
+      return c.json({ error: "Phone must be exactly 9 digits" }, 400);
+    }
+
+    const account = await createAccount(body);
+    return c.json(account, 201);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return c.json({ error: `Account error: ${message}` }, 500);
   }
-
-  if (!/^\d{9}$/.test(phone)) {
-    return c.json({ error: "Phone must be exactly 9 digits" }, 400);
-  }
-
-  const account = await createAccount(body);
-  return c.json(account, 201);
 }
 
 export async function handleDeleteAccount(c: Context) {
