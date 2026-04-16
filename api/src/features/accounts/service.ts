@@ -15,7 +15,6 @@ import type {
 } from "../../types/index.js";
 import { isPastDate } from "../../utils/index.js";
 import {
-  db,
   getDecryptedPassword,
   getSiteUserId,
   getStoredAccount,
@@ -69,17 +68,16 @@ export async function getSchedule(
   const pwd = await getDecryptedPassword(firstAcc.id, APP_PASSWORD);
   if (!pwd) return null;
 
-  await getSession(db, firstAcc.id, stored.username, pwd);
+  await getSession(firstAcc.id, stored.username, pwd);
 
   const ourUsers = new Map<string, string>();
   for (const acc of accounts) {
-    const siteUserId = getSiteUserId(db, acc.id);
+    const siteUserId = getSiteUserId(acc.id);
     if (siteUserId && siteUserId !== "0") ourUsers.set(siteUserId, acc.id);
   }
 
   const [court1, court2] = await Promise.all([
     riotintoGetCourtSchedule(
-      db,
       firstAcc.id,
       stored.username,
       pwd,
@@ -88,7 +86,6 @@ export async function getSchedule(
       ourUsers,
     ),
     riotintoGetCourtSchedule(
-      db,
       firstAcc.id,
       stored.username,
       pwd,
@@ -114,7 +111,6 @@ export async function getBookings() {
         const pwd = await getDecryptedPassword(acc.id, APP_PASSWORD);
         if (!pwd) return null;
         const current = await riotintoGetCurrentBooking(
-          db,
           acc.id,
           stored.username,
           pwd,
@@ -153,7 +149,6 @@ export async function book(
   if (!pwd) return { success: false, error: "Could not decrypt credentials" };
 
   const result = await riotintoMakeBooking(
-    db,
     accountId,
     stored.username,
     pwd,
@@ -189,7 +184,6 @@ export async function cancel(
   if (!pwd) return { success: false, error: "Could not decrypt credentials" };
 
   const result = await riotintoCancelBooking(
-    db,
     accountId,
     stored.username,
     pwd,
@@ -277,7 +271,7 @@ export async function bulkBook(
   const accounts = repoListAccounts();
   const ourUsers = new Map<string, string>();
   for (const acc of accounts) {
-    const siteUserId = getSiteUserId(db, acc.id);
+    const siteUserId = getSiteUserId(acc.id);
     if (siteUserId && siteUserId !== "0") ourUsers.set(siteUserId, acc.id);
   }
 
@@ -322,8 +316,7 @@ export async function bulkBook(
 
         try {
           const schedule = await riotintoGetCourtSchedule(
-            db,
-            stored.id,
+            accountId,
             stored.username,
             pwd,
             courtId,
@@ -346,7 +339,6 @@ export async function bulkBook(
 
         if (forceCancel) {
           await riotintoCancelBooking(
-            db,
             accountId,
             stored.username,
             pwd,
@@ -362,7 +354,6 @@ export async function bulkBook(
         }
 
         const bookResult = await riotintoMakeBooking(
-          db,
           accountId,
           stored.username,
           pwd,

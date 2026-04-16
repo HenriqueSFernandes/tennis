@@ -2,7 +2,6 @@ import { APP_PASSWORD } from "../../config/index.js";
 import { getCurrentBooking } from "../../integrations/riotinto/index.js";
 import type { BookingWithAccount } from "../../types/index.js";
 import {
-  db,
   getDecryptedPassword,
   getStoredAccount,
 } from "../accounts/repository.js";
@@ -19,7 +18,6 @@ export async function fetchAllBookings(): Promise<BookingWithAccount[]> {
         const pwd = await getDecryptedPassword(acc.id, APP_PASSWORD);
         if (!pwd) return null;
         const current = await getCurrentBooking(
-          db,
           acc.id,
           stored.username,
           pwd,

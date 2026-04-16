@@ -11,7 +11,6 @@ import { clearSession, getCachedSession, saveSession } from "../../core/db.js";
 import type {
   CachedSession,
   CourtSchedule,
-  Db,
   ScheduleSlot,
 } from "../../types/index.js";
 
@@ -144,21 +143,20 @@ async function login(
 // ── Session management ────────────────────────────────────────────────────────
 
 export async function getSession(
-  db: Db,
   accountId: string,
   username: string,
   password: string,
 ): Promise<CachedSession> {
-  const cached = getCachedSession(db, accountId);
+  const cached = getCachedSession(accountId);
   if (cached) return cached;
 
   const session = await login(username, password);
-  saveSession(db, accountId, session);
+  saveSession(accountId, session);
   return session;
 }
 
-export function invalidateSession(db: Db, accountId: string): void {
-  clearSession(db, accountId);
+export function invalidateSession(accountId: string): void {
+  clearSession(accountId);
 }
 
 // ── JSONP POST helper ─────────────────────────────────────────────────────────
@@ -285,10 +283,9 @@ type RawReservasResponse =
       }>;
     };
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// ── Public API ───────────────────────────────────────────────────────────────
 
 export async function getCourtSchedule(
-  db: Db,
   accountId: string,
   username: string,
   password: string,
@@ -296,7 +293,7 @@ export async function getCourtSchedule(
   weekOffset: number,
   ourUsers: Map<string, string>,
 ): Promise<CourtSchedule> {
-  const session = await getSession(db, accountId, username, password);
+  const session = await getSession(accountId, username, password);
 
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + weekOffset * 7);
@@ -388,7 +385,6 @@ function toIsoDate(ddmmyyyy: string): string {
 }
 
 export async function makeBooking(
-  db: Db,
   accountId: string,
   username: string,
   password: string,
@@ -401,7 +397,7 @@ export async function makeBooking(
   hora: number,
   semana: number,
 ): Promise<{ success: boolean; message?: string }> {
-  const session = await getSession(db, accountId, username, password);
+  const session = await getSession(accountId, username, password);
 
   const raw = (await jsonpPost(
     "/index.php?option=com_agenda&task=ajax.changeReserva&format=json",
@@ -421,14 +417,13 @@ export async function makeBooking(
   )) as { success: boolean; message?: string };
 
   if (!raw.success && raw.message?.toLowerCase().includes("sessão")) {
-    invalidateSession(db, accountId);
+    invalidateSession(accountId);
   }
 
   return raw;
 }
 
 export async function cancelBooking(
-  db: Db,
   accountId: string,
   username: string,
   password: string,
@@ -441,7 +436,7 @@ export async function cancelBooking(
   hora: number,
   semana: number,
 ): Promise<{ success: boolean; message?: string }> {
-  const session = await getSession(db, accountId, username, password);
+  const session = await getSession(accountId, username, password);
 
   const raw = (await jsonpPost(
     "/index.php?option=com_agenda&task=ajax.changeReserva&format=json",
@@ -461,7 +456,7 @@ export async function cancelBooking(
   )) as { success: boolean; message?: string };
 
   if (!raw.success && raw.message?.toLowerCase().includes("sessão")) {
-    invalidateSession(db, accountId);
+    invalidateSession(accountId);
   }
 
   return raw;
@@ -474,13 +469,12 @@ export interface ResolvedBooking {
 }
 
 export async function getCurrentBooking(
-  db: Db,
   accountId: string,
   username: string,
   password: string,
   courtId: number,
 ): Promise<ResolvedBooking | null> {
-  const session = await getSession(db, accountId, username, password);
+  const session = await getSession(accountId, username, password);
 
   const dados = (await jsonpPost(
     "/index.php?option=com_agenda&task=ajax.getDadosLocal&format=json",
