@@ -70,10 +70,9 @@ export function Dashboard() {
     setLoading(true);
     setError("");
     try {
-      const [s0, s1, s2, a, f] = await Promise.all([
+      const [s0, s1, a, f] = await Promise.all([
         getSchedule(0),
         getSchedule(1),
-        getSchedule(2),
         getAccounts(),
         apiGetFavorites(),
       ]);
@@ -81,10 +80,9 @@ export function Dashboard() {
       setSchedules([
         { weekOffset: 0, courts: s0.courts },
         { weekOffset: 1, courts: s1.courts },
-        { weekOffset: 2, courts: s2.courts },
       ]);
 
-      const allSlots = [s0, s1, s2].flatMap((s) =>
+      const allSlots = [s0, s1].flatMap((s) =>
         s.courts.flatMap((court) =>
           court.slots
             .filter((slot) => slot.isOurs)
@@ -332,7 +330,6 @@ export function Dashboard() {
   const isDashboardStale =
     staleKeys.has("schedule:0") ||
     staleKeys.has("schedule:1") ||
-    staleKeys.has("schedule:2") ||
     staleKeys.has("accounts");
 
   return (

@@ -72,7 +72,23 @@ export async function getSchedule(
   const pwd = await getDecryptedPassword(userId, firstAcc.id);
   if (!pwd) return null;
 
-  await getSession(firstAcc.id, stored.username, pwd);
+  // Refresh sessions for ALL accounts to ensure ourUsers map is populated correctly
+  await Promise.all(
+    accounts.map(async (acc) => {
+      try {
+        const accStored = await getStoredAccount(userId, acc.id);
+        if (!accStored) return;
+        const accPwd = await getDecryptedPassword(userId, acc.id);
+        if (!accPwd) return;
+        await getSession(acc.id, accStored.username, accPwd);
+      } catch (e) {
+        console.error(
+          `Failed to refresh session for account ${acc.id} (${acc.username}):`,
+          e,
+        );
+      }
+    }),
+  );
 
   const ourUsers = new Map<string, string>();
   for (const acc of accounts) {

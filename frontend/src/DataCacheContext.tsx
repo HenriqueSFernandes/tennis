@@ -114,18 +114,16 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
     const keys: string[] = [];
 
     try {
-      const [s0, s1, s2, a] = await Promise.all([
+      const [s0, s1, a] = await Promise.all([
         apiGetSchedule(0),
         apiGetSchedule(1),
-        apiGetSchedule(2),
         apiGetAccounts(),
       ]);
       cacheRef.current.schedule.set(0, { data: s0, timestamp: Date.now() });
       cacheRef.current.schedule.set(1, { data: s1, timestamp: Date.now() });
-      cacheRef.current.schedule.set(2, { data: s2, timestamp: Date.now() });
       cacheRef.current.accounts = { data: a, timestamp: Date.now() };
     } catch (err) {
-      keys.push("schedule:0", "schedule:1", "schedule:2", "accounts");
+      keys.push("schedule:0", "schedule:1", "accounts");
       setStaleKeys(new Set(keys));
       throw err;
     }

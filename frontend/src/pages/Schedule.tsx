@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
   addFavorite,
@@ -18,7 +18,7 @@ import type {
   ScheduleSlot,
 } from "../types";
 
-const WEEK_LABELS = ["Esta semana", "Próxima semana", "Daqui a 2 semanas"];
+const WEEK_LABELS = ["Esta semana", "Próxima semana"];
 
 export function Schedule() {
   const location = useLocation();
@@ -72,11 +72,7 @@ export function Schedule() {
     }
   }, [weekOffset, getSchedule, getAccounts]);
 
-  const mountedRef = useRef(false);
-
   useEffect(() => {
-    if (mountedRef.current) return;
-    mountedRef.current = true;
     loadData();
   }, [loadData]);
 
@@ -281,9 +277,9 @@ export function Schedule() {
           <button
             onClick={() => {
               setWeekDirection("next");
-              setWeekOffset((w) => Math.min(2, w + 1));
+              setWeekOffset((w) => Math.min(1, w + 1));
             }}
-            disabled={weekOffset >= 2}
+            disabled={weekOffset >= 1}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
           >
             <span className="hidden sm:inline text-sm font-medium">
@@ -295,7 +291,7 @@ export function Schedule() {
 
         {/* Week Progress Indicator */}
         <div className="flex gap-1.5 mt-3 px-2 pb-1">
-          {[0, 1, 2].map((offset) => (
+          {[0, 1].map((offset) => (
             <button
               key={offset}
               onClick={() => {
