@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-export const APP_PASSWORD = process.env["APP_PASSWORD"] ?? "";
+export const ENCRYPTION_KEY = process.env["ENCRYPTION_KEY"] ?? "";
 export const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
 export const DATA_DIR = process.env["DATA_DIR"] ?? "data";
 

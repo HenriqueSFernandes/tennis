@@ -1,8 +1,7 @@
 // Dashboard page
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
 import {
   exportBookings as apiExportBookings,
   getFavorites as apiGetFavorites,
@@ -56,7 +55,6 @@ interface ScheduleData {
 }
 
 export function Dashboard() {
-  const { password } = useAuth();
   const navigate = useNavigate();
   const { getSchedule, getAccounts, refresh, staleKeys } = useDataCache();
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
@@ -69,7 +67,6 @@ export function Dashboard() {
   const [showBulkBookModal, setShowBulkBookModal] = useState(false);
 
   async function loadData() {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
@@ -78,7 +75,7 @@ export function Dashboard() {
         getSchedule(1),
         getSchedule(2),
         getAccounts(),
-        apiGetFavorites(password),
+        apiGetFavorites(),
       ]);
 
       setSchedules([
@@ -135,9 +132,13 @@ export function Dashboard() {
     }
   }
 
+  const mountedRef = useRef(false);
+
   useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
     loadData();
-  }, [password, getSchedule, getAccounts]);
+  }, [loadData]);
 
   const handleRefresh = async () => {
     await refresh();
@@ -145,11 +146,10 @@ export function Dashboard() {
   };
 
   const handleExport = async () => {
-    if (!password) return;
     setExporting(true);
     setError("");
     try {
-      const blob = await apiExportBookings(password);
+      const blob = await apiExportBookings();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -315,19 +315,17 @@ export function Dashboard() {
   }
 
   async function handleDeleteFavorite(id: string) {
-    if (!password) return;
     const { deleteFavorite } = await import("../api");
-    await deleteFavorite(password, id);
-    const f = await apiGetFavorites(password);
+    await deleteFavorite(id);
+    const f = await apiGetFavorites();
     setFavorites(f);
   }
 
   async function handleUpdateFavoriteName(id: string, name: string) {
-    if (!password) return;
     // Import directly to avoid circular dependency
     const { updateFavorite } = await import("../api");
-    await updateFavorite(password, id, { name });
-    const f = await apiGetFavorites(password);
+    await updateFavorite(id, { name });
+    const f = await apiGetFavorites();
     setFavorites(f);
   }
 
@@ -479,9 +477,8 @@ export function Dashboard() {
       )}
 
       {/* Bulk Book Modal */}
-      {showBulkBookModal && password && (
+      {showBulkBookModal && (
         <BulkBookModal
-          password={password}
           favorites={computeFavoritesWithAvailability()}
           accounts={accounts}
           onClose={() => setShowBulkBookModal(false)}

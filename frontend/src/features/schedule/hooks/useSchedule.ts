@@ -1,19 +1,16 @@
 // Schedule hook
 
 import { useCallback, useState } from "react";
-import { useAuth } from "../../../AuthContext";
 import { useDataCache } from "../../../DataCacheContext";
 import type { ScheduleResponse } from "../../../types";
 
 export function useSchedule(weekOffset: number) {
-  const { password } = useAuth();
   const { getSchedule: getCachedSchedule } = useDataCache();
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const loadSchedule = useCallback(async () => {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
@@ -24,7 +21,7 @@ export function useSchedule(weekOffset: number) {
     } finally {
       setLoading(false);
     }
-  }, [password, weekOffset, getCachedSchedule]);
+  }, [weekOffset, getCachedSchedule]);
 
   return {
     schedule,

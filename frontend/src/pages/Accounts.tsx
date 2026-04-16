@@ -1,7 +1,6 @@
 // Accounts page
 
 import { useEffect, useState } from "react";
-import { useAuth } from "../AuthContext";
 import { AccountCard } from "../components/AccountCard";
 import { EditAccountModal } from "../components/EditAccountModal";
 import {
@@ -36,7 +35,6 @@ const initialForm: AddAccountRequest = {
 };
 
 export function Accounts() {
-  const { password } = useAuth();
   const {
     accounts,
     loading,
@@ -121,7 +119,6 @@ export function Accounts() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!password) return;
 
     setTouched({
       displayName: true,

@@ -10,7 +10,6 @@ import type {
 } from "../types";
 
 interface BulkBookModalProps {
-  password: string;
   favorites: FavoriteWithAvailability[];
   accounts: AccountSummary[];
   onClose: () => void;
@@ -31,7 +30,6 @@ const DAY_NAMES = [
 ];
 
 export function BulkBookModal({
-  password,
   favorites,
   accounts,
   onClose,
@@ -191,7 +189,7 @@ export function BulkBookModal({
     }));
 
     try {
-      const res = await bulkBook(password, { bookings, forceCancel });
+      const res = await bulkBook({ bookings, forceCancel });
       setResult(res);
       setStep("results");
       onSuccess();

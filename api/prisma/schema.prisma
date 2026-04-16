@@ -7,9 +7,76 @@ datasource db {
   provider = "postgresql"
 }
 
+// Better Auth tables
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  
+  riotintoAccounts RiotintoAccount[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
 model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// App tables - Riotinto integration
+model RiotintoAccount {
   id                String    @id @default(uuid())
-  username          String    @unique
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  username          String
   displayName       String    @map("display_name")
   phone             String
   encryptedPassword String    @map("encrypted_password")
@@ -17,25 +84,26 @@ model Account {
   iv                String
   createdAt         DateTime  @default(now()) @map("created_at")
 
-  sessions  Session?
-  favorites Favorite[]
+  sessionCache RiotintoSession?
+  favorites    RiotintoFavorite[]
 
-  @@map("accounts")
+  @@unique([userId, username])
+  @@map("riotinto_accounts")
 }
 
-model Session {
+model RiotintoSession {
   accountId String  @id @map("account_id")
   cookies   String
   csrfToken String  @map("csrf_token")
   userId    String  @map("user_id")
   cachedAt  BigInt  @map("cached_at")
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account RiotintoAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
+  @@map("riotinto_sessions")
 }
 
-model Favorite {
+model RiotintoFavorite {
   id        String   @id @default(uuid())
   accountId String   @map("account_id")
   courtId   Int      @map("court_id")
@@ -44,8 +112,8 @@ model Favorite {
   name      String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account RiotintoAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, courtId, dayOfWeek, time])
-  @@map("favorites")
+  @@map("riotinto_favorites")
 }

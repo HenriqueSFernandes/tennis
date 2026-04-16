@@ -147,11 +147,11 @@ export async function getSession(
   username: string,
   password: string,
 ): Promise<CachedSession> {
-  const cached = getCachedSession(accountId);
+  const cached = await getCachedSession(accountId);
   if (cached) return cached;
 
   const session = await login(username, password);
-  saveSession(accountId, session);
+  await saveSession(accountId, session);
   return session;
 }
 

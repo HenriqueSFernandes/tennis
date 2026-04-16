@@ -7,35 +7,30 @@ import type {
   UpdateAccountRequest,
 } from "../../../types";
 
-export async function getAccounts(password: string): Promise<AccountSummary[]> {
-  return request<AccountSummary[]>("/accounts", password);
+export async function getAccounts(): Promise<AccountSummary[]> {
+  return request<AccountSummary[]>("/riotinto-accounts");
 }
 
 export async function addAccount(
-  password: string,
   data: AddAccountRequest,
 ): Promise<AccountSummary> {
-  return request<AccountSummary>("/accounts", password, {
+  return request<AccountSummary>("/riotinto-accounts", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteAccount(
-  password: string,
-  id: string,
-): Promise<void> {
-  await request<{ ok: boolean }>(`/accounts/${id}`, password, {
+export async function deleteAccount(id: string): Promise<void> {
+  await request<{ ok: boolean }>(`/riotinto-accounts/${id}`, {
     method: "DELETE",
   });
 }
 
 export async function updateAccount(
-  password: string,
   id: string,
   data: UpdateAccountRequest,
 ): Promise<AccountSummary> {
-  return request<AccountSummary>(`/accounts/${id}`, password, {
+  return request<AccountSummary>(`/riotinto-accounts/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });

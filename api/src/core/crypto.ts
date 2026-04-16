@@ -1,7 +1,9 @@
 /**
  * AES-256-GCM encryption/decryption using the Web Crypto API.
- * The app password is used with PBKDF2 to derive an encryption key.
+ * Uses ENCRYPTION_KEY from environment for key derivation.
  */
+
+import { ENCRYPTION_KEY } from "../config/index.js";
 
 const PBKDF2_ITERATIONS = 200_000;
 const KEY_LENGTH = 256;
@@ -25,14 +27,11 @@ function bytesToB64(bytes: Uint8Array): string {
   return btoa(binStr);
 }
 
-async function deriveKey(
-  password: string,
-  salt: Uint8Array,
-): Promise<CryptoKey> {
+async function deriveKey(salt: Uint8Array): Promise<CryptoKey> {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    enc.encode(password),
+    enc.encode(ENCRYPTION_KEY),
     "PBKDF2",
     false,
     ["deriveKey"],
@@ -57,14 +56,11 @@ export interface EncryptedBlob {
   iv: string;
 }
 
-export async function encrypt(
-  plaintext: string,
-  password: string,
-): Promise<EncryptedBlob> {
+export async function encrypt(plaintext: string): Promise<EncryptedBlob> {
   const enc = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-  const key = await deriveKey(password, salt);
+  const key = await deriveKey(salt);
   const ciphertextBuf = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
@@ -77,14 +73,11 @@ export async function encrypt(
   };
 }
 
-export async function decrypt(
-  blob: EncryptedBlob,
-  password: string,
-): Promise<string> {
+export async function decrypt(blob: EncryptedBlob): Promise<string> {
   const dec = new TextDecoder();
   const salt = b64ToBytes(blob.salt);
   const iv = b64ToBytes(blob.iv);
-  const key = await deriveKey(password, salt);
+  const key = await deriveKey(salt);
   const plaintextBuf = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: iv as Uint8Array<ArrayBuffer> },
     key,

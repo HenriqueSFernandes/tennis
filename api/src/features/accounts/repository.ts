@@ -15,10 +15,11 @@ import { prisma } from "../../utils/prisma.js";
 
 export { clearSession, getCachedSession, getSiteUserId, saveSession };
 
-// ── Accounts ──────────────────────────────────────────────────────────────────
+// ── Riotinto Accounts ─────────────────────────────────────────────────────────
 
-export function listAccounts(): AccountSummary[] {
-  const rows = prisma.account.findMany({
+export async function listAccounts(userId: string): Promise<AccountSummary[]> {
+  const rows = await prisma.riotintoAccount.findMany({
+    where: { userId },
     orderBy: { createdAt: "asc" },
     select: {
       id: true,
@@ -38,9 +39,12 @@ export function listAccounts(): AccountSummary[] {
   }));
 }
 
-export function getStoredAccount(id: string): StoredAccount | null {
-  const row = prisma.account.findUnique({
-    where: { id },
+export async function getStoredAccount(
+  userId: string,
+  id: string,
+): Promise<StoredAccount | null> {
+  const row = await prisma.riotintoAccount.findFirst({
+    where: { id, userId },
     select: {
       id: true,
       username: true,
@@ -67,19 +71,20 @@ export function getStoredAccount(id: string): StoredAccount | null {
 }
 
 export async function addAccount(
+  userId: string,
   username: string,
   password: string,
   displayName: string,
   phone: string,
-  appPassword: string,
 ): Promise<AccountSummary> {
   const id = crypto.randomUUID();
-  const blob = await encrypt(password, appPassword);
+  const blob = await encrypt(password);
   const createdAt = new Date();
 
-  const row = await prisma.account.create({
+  const row = await prisma.riotintoAccount.create({
     data: {
       id,
+      userId,
       username,
       displayName,
       phone,
@@ -106,23 +111,29 @@ export async function addAccount(
   };
 }
 
-export function deleteAccount(id: string): boolean {
+export async function deleteAccount(
+  userId: string,
+  id: string,
+): Promise<boolean> {
   try {
-    prisma.account.delete({ where: { id } });
+    await prisma.riotintoAccount.deleteMany({
+      where: { id, userId },
+    });
     return true;
   } catch {
     return false;
   }
 }
 
-export function updateAccount(
+export async function updateAccount(
+  userId: string,
   id: string,
   displayName: string,
   phone: string,
-): boolean {
+): Promise<boolean> {
   try {
-    prisma.account.update({
-      where: { id },
+    await prisma.riotintoAccount.updateMany({
+      where: { id, userId },
       data: { displayName, phone },
     });
     return true;
@@ -132,26 +143,33 @@ export function updateAccount(
 }
 
 export async function getDecryptedPassword(
+  userId: string,
   id: string,
-  appPassword: string,
 ): Promise<string | null> {
-  const acc = getStoredAccount(id);
+  const acc = await getStoredAccount(userId, id);
   if (!acc) return null;
-  return decrypt(
-    {
-      ciphertext: acc.encryptedPassword,
-      salt: acc.salt,
-      iv: acc.iv,
-    },
-    appPassword,
-  );
+  return decrypt({
+    ciphertext: acc.encryptedPassword,
+    salt: acc.salt,
+    iv: acc.iv,
+  });
 }
 
 // ── Favorites ─────────────────────────────────────────────────────────────────
 
-export function listFavorites(accountId?: string): Favorite[] {
-  const rows = prisma.favorite.findMany({
-    where: accountId ? { accountId } : undefined,
+export async function listFavorites(
+  userId: string,
+  accountId?: string,
+): Promise<Favorite[]> {
+  const where: { accountId?: string; account: { userId: string } } = {
+    account: { userId },
+  };
+  if (accountId) {
+    where.accountId = accountId;
+  }
+
+  const rows = await prisma.riotintoFavorite.findMany({
+    where,
     orderBy: [{ courtId: "asc" }, { dayOfWeek: "asc" }, { time: "asc" }],
   });
 
@@ -166,11 +184,20 @@ export function listFavorites(accountId?: string): Favorite[] {
   }));
 }
 
-export function addFavorite(data: AddFavoriteRequest): Favorite {
+export async function addFavorite(
+  userId: string,
+  data: AddFavoriteRequest,
+): Promise<Favorite | null> {
+  // Verify the account belongs to the user
+  const account = await prisma.riotintoAccount.findFirst({
+    where: { id: data.accountId, userId },
+  });
+  if (!account) return null;
+
   const id = crypto.randomUUID();
   const createdAt = new Date();
 
-  const row = prisma.favorite.create({
+  const row = await prisma.riotintoFavorite.create({
     data: {
       id,
       accountId: data.accountId,
@@ -193,9 +220,20 @@ export function addFavorite(data: AddFavoriteRequest): Favorite {
   };
 }
 
-export function updateFavorite(id: string, name: string): boolean {
+export async function updateFavorite(
+  userId: string,
+  id: string,
+  name: string,
+): Promise<boolean> {
   try {
-    prisma.favorite.update({
+    // Verify the favorite belongs to the user through the account
+    const favorite = await prisma.riotintoFavorite.findFirst({
+      where: { id },
+      include: { account: true },
+    });
+    if (!favorite || favorite.account.userId !== userId) return false;
+
+    await prisma.riotintoFavorite.update({
       where: { id },
       data: { name },
     });
@@ -205,22 +243,39 @@ export function updateFavorite(id: string, name: string): boolean {
   }
 }
 
-export function deleteFavorite(id: string): boolean {
+export async function deleteFavorite(
+  userId: string,
+  id: string,
+): Promise<boolean> {
   try {
-    prisma.favorite.delete({ where: { id } });
+    // Verify the favorite belongs to the user through the account
+    const favorite = await prisma.riotintoFavorite.findFirst({
+      where: { id },
+      include: { account: true },
+    });
+    if (!favorite || favorite.account.userId !== userId) return false;
+
+    await prisma.riotintoFavorite.delete({ where: { id } });
     return true;
   } catch {
     return false;
   }
 }
 
-export function isFavorite(
+export async function isFavorite(
+  userId: string,
   accountId: string,
   courtId: number,
   dayOfWeek: number,
   time: string,
-): Favorite | null {
-  const row = prisma.favorite.findUnique({
+): Promise<Favorite | null> {
+  // Verify the account belongs to the user
+  const account = await prisma.riotintoAccount.findFirst({
+    where: { id: accountId, userId },
+  });
+  if (!account) return null;
+
+  const row = await prisma.riotintoFavorite.findUnique({
     where: {
       accountId_courtId_dayOfWeek_time: {
         accountId,

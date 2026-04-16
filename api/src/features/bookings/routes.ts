@@ -1,10 +1,14 @@
 import type { Context } from "hono";
 import type { BookRequest, CancelRequest } from "../../types/index.js";
 import { book, cancel, getBookings } from "../accounts/service.js";
+import { getUserIdFromContext } from "../auth/middleware.js";
 
 export async function handleGetBookings(c: Context) {
   try {
-    const bookings = await getBookings();
+    const userId = getUserIdFromContext(c);
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const bookings = await getBookings(userId);
     return c.json(bookings);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -14,10 +18,14 @@ export async function handleGetBookings(c: Context) {
 
 export async function handleBook(c: Context) {
   try {
+    const userId = getUserIdFromContext(c);
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
     const body = await c.req.json<BookRequest>();
     const { accountId, courtId, date, dayIndex, turno, hora, semana } = body;
 
     const result = await book(
+      userId,
       accountId,
       courtId,
       date,
@@ -39,10 +47,14 @@ export async function handleBook(c: Context) {
 
 export async function handleCancel(c: Context) {
   try {
+    const userId = getUserIdFromContext(c);
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
     const body = await c.req.json<CancelRequest>();
     const { accountId, courtId, date, dayIndex, turno, hora, semana } = body;
 
     const result = await cancel(
+      userId,
       accountId,
       courtId,
       date,

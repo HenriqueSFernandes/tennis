@@ -3,15 +3,19 @@ import { prisma } from "../utils/prisma.js";
 
 const SESSION_TTL_MS = 90 * 60 * 1000;
 
-export function getCachedSession(accountId: string): CachedSession | null {
-  const row = prisma.session.findUnique({
+export async function getCachedSession(
+  accountId: string,
+): Promise<CachedSession | null> {
+  const row = await prisma.riotintoSession.findUnique({
     where: { accountId },
   });
 
   if (!row) return null;
 
   if (Date.now() - Number(row.cachedAt) > SESSION_TTL_MS) {
-    prisma.session.delete({ where: { accountId } }).catch(() => {});
+    await prisma.riotintoSession
+      .delete({ where: { accountId } })
+      .catch(() => {});
     return null;
   }
 
@@ -23,8 +27,11 @@ export function getCachedSession(accountId: string): CachedSession | null {
   };
 }
 
-export function saveSession(accountId: string, session: CachedSession): void {
-  prisma.session.upsert({
+export async function saveSession(
+  accountId: string,
+  session: CachedSession,
+): Promise<void> {
+  await prisma.riotintoSession.upsert({
     where: { accountId },
     update: {
       cookies: session.cookies,
@@ -42,12 +49,12 @@ export function saveSession(accountId: string, session: CachedSession): void {
   });
 }
 
-export function clearSession(accountId: string): void {
-  prisma.session.delete({ where: { accountId } }).catch(() => {});
+export async function clearSession(accountId: string): Promise<void> {
+  await prisma.riotintoSession.delete({ where: { accountId } }).catch(() => {});
 }
 
-export function getSiteUserId(accountId: string): string | null {
-  const row = prisma.session.findUnique({
+export async function getSiteUserId(accountId: string): Promise<string | null> {
+  const row = await prisma.riotintoSession.findUnique({
     where: { accountId },
     select: { userId: true },
   });

@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { useAuth } from "../AuthContext";
 import {
   addFavorite,
   book,
@@ -22,7 +21,6 @@ import type {
 const WEEK_LABELS = ["Esta semana", "Próxima semana", "Daqui a 2 semanas"];
 
 export function Schedule() {
-  const { password } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { getSchedule, getAccounts, invalidate, refresh, staleKeys } =
@@ -56,14 +54,13 @@ export function Schedule() {
   );
 
   const loadData = useCallback(async () => {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
       const [s, a, f] = await Promise.all([
         getSchedule(weekOffset),
         getAccounts(),
-        getFavorites(password),
+        getFavorites(),
       ]);
       setSchedule(s);
       setAccounts(a);
@@ -73,9 +70,13 @@ export function Schedule() {
     } finally {
       setLoading(false);
     }
-  }, [password, weekOffset, getSchedule, getAccounts]);
+  }, [weekOffset, getSchedule, getAccounts]);
+
+  const mountedRef = useRef(false);
 
   useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
     loadData();
   }, [loadData]);
 
@@ -141,7 +142,6 @@ export function Schedule() {
     courtId: number,
     isFavorited: boolean,
   ) {
-    if (!password) return;
     if (isFavorited) {
       const fav = favorites.find(
         (f) =>
@@ -150,9 +150,9 @@ export function Schedule() {
           f.courtId === courtId,
       );
       if (fav) {
-        await deleteFavorite(password, fav.id);
+        await deleteFavorite(fav.id);
       }
-      const f = await getFavorites(password);
+      const f = await getFavorites();
       setFavorites(f);
     } else {
       setAddFavoriteSlot(slot);
@@ -161,8 +161,8 @@ export function Schedule() {
   }
 
   async function handleAddFavorite(accountId: string) {
-    if (!addFavoriteSlot || !addFavoriteCourtId || !password) return;
-    await addFavorite(password, {
+    if (!addFavoriteSlot || !addFavoriteCourtId) return;
+    await addFavorite({
       accountId,
       courtId: addFavoriteCourtId,
       dayOfWeek: addFavoriteSlot.dayIndex,
@@ -170,13 +170,13 @@ export function Schedule() {
     });
     setAddFavoriteSlot(null);
     setAddFavoriteCourtId(null);
-    const f = await getFavorites(password);
+    const f = await getFavorites();
     setFavorites(f);
   }
 
   async function handleBook(accountId: string) {
-    if (!bookSlot || !bookCourtId || !password) return;
-    await book(password, {
+    if (!bookSlot || !bookCourtId) return;
+    await book({
       accountId,
       courtId: bookCourtId,
       date: bookSlot.date,
@@ -193,8 +193,8 @@ export function Schedule() {
   }
 
   async function handleCancel() {
-    if (!cancelSlot || !cancelCourtId || !password) return;
-    await cancelBook(password, {
+    if (!cancelSlot || !cancelCourtId) return;
+    await cancelBook({
       accountId: cancelSlot.ourAccountId ?? "",
       courtId: cancelCourtId,
       date: cancelSlot.date,

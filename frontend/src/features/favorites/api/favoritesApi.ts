@@ -9,49 +9,36 @@ import type {
   UpdateFavoriteRequest,
 } from "../../../types";
 
-export async function getFavorites(
-  password: string,
-  accountId?: string,
-): Promise<Favorite[]> {
+export async function getFavorites(accountId?: string): Promise<Favorite[]> {
   const queryParams = accountId ? `?accountId=${accountId}` : "";
-  return request<Favorite[]>(`/favorites${queryParams}`, password);
+  return request<Favorite[]>(`/favorites${queryParams}`);
 }
 
-export async function addFavorite(
-  password: string,
-  data: AddFavoriteRequest,
-): Promise<Favorite> {
-  return request<Favorite>("/favorites", password, {
+export async function addFavorite(data: AddFavoriteRequest): Promise<Favorite> {
+  return request<Favorite>("/favorites", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function updateFavorite(
-  password: string,
   id: string,
   data: UpdateFavoriteRequest,
 ): Promise<Favorite> {
-  return request<Favorite>(`/favorites/${id}`, password, {
+  return request<Favorite>(`/favorites/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteFavorite(
-  password: string,
-  id: string,
-): Promise<void> {
-  await request<{ ok: boolean }>(`/favorites/${id}`, password, {
+export async function deleteFavorite(id: string): Promise<void> {
+  await request<{ ok: boolean }>(`/favorites/${id}`, {
     method: "DELETE",
   });
 }
 
-export async function bulkBook(
-  password: string,
-  data: BulkBookRequest,
-): Promise<BulkBookResult> {
-  return request<BulkBookResult>("/bulk-book", password, {
+export async function bulkBook(data: BulkBookRequest): Promise<BulkBookResult> {
+  return request<BulkBookResult>("/bulk-book", {
     method: "POST",
     body: JSON.stringify(data),
   });
