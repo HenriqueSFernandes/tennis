@@ -7,10 +7,10 @@ COPY package.json ./
 RUN npm install
 
 COPY tsconfig.json ./
+COPY prisma/ ./prisma/
 COPY src/ ./src/
-COPY generated/ ./generated/
 
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
