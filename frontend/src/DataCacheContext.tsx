@@ -38,7 +38,7 @@ interface DataCacheContextValue {
 const DataCacheContext = createContext<DataCacheContextValue | null>(null);
 
 export function DataCacheProvider({ children }: { children: React.ReactNode }) {
-  const { password } = useAuth();
+  const { isAuthenticated } = useAuth();
   const cacheRef = useRef<CacheState>({
     schedule: new Map(),
     accounts: null,
@@ -74,62 +74,60 @@ export function DataCacheProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSchedule = useCallback(
     async (weekOffset: number): Promise<ScheduleResponse> => {
-      if (!password) throw new Error("Not authenticated");
+      if (!isAuthenticated) throw new Error("Not authenticated");
 
       const cached = cacheRef.current.schedule.get(weekOffset);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
         return cached.data;
       }
 
-      const data = await apiGetSchedule(password, weekOffset);
+      const data = await apiGetSchedule(weekOffset);
       cacheRef.current.schedule.set(weekOffset, {
         data,
         timestamp: Date.now(),
       });
       return data;
     },
-    [password],
+    [isAuthenticated],
   );
 
   const fetchAccounts = useCallback(async (): Promise<AccountSummary[]> => {
-    if (!password) throw new Error("Not authenticated");
+    if (!isAuthenticated) throw new Error("Not authenticated");
 
     const cached = cacheRef.current.accounts;
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.data;
     }
 
-    const data = await apiGetAccounts(password);
+    const data = await apiGetAccounts();
     cacheRef.current.accounts = {
       data,
       timestamp: Date.now(),
     };
     return data;
-  }, [password]);
+  }, [isAuthenticated]);
 
   const refresh = useCallback(async (): Promise<void> => {
     invalidate();
-    if (!password) return;
+    if (!isAuthenticated) return;
 
     const keys: string[] = [];
 
     try {
-      const [s0, s1, s2, a] = await Promise.all([
-        apiGetSchedule(password, 0),
-        apiGetSchedule(password, 1),
-        apiGetSchedule(password, 2),
-        apiGetAccounts(password),
+      const [s0, s1, a] = await Promise.all([
+        apiGetSchedule(0),
+        apiGetSchedule(1),
+        apiGetAccounts(),
       ]);
       cacheRef.current.schedule.set(0, { data: s0, timestamp: Date.now() });
       cacheRef.current.schedule.set(1, { data: s1, timestamp: Date.now() });
-      cacheRef.current.schedule.set(2, { data: s2, timestamp: Date.now() });
       cacheRef.current.accounts = { data: a, timestamp: Date.now() };
     } catch (err) {
-      keys.push("schedule:0", "schedule:1", "schedule:2", "accounts");
+      keys.push("schedule:0", "schedule:1", "accounts");
       setStaleKeys(new Set(keys));
       throw err;
     }
-  }, [invalidate, password]);
+  }, [invalidate, isAuthenticated]);
 
   const getSchedule = useCallback(
     async (weekOffset: number): Promise<ScheduleResponse> => {

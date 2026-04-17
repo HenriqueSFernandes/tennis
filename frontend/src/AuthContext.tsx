@@ -1,58 +1,124 @@
 import type React from "react";
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { authClient } from "./lib/auth";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  image?: string;
+}
 
 interface AuthContextValue {
-  password: string | null;
-  isUnlocked: boolean;
-  unlock: (password: string) => Promise<boolean>;
-  lock: () => void;
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<{ error?: string }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const PASSWORD_KEY = "rt_password";
-
-const AUTH_URL =
-  (import.meta.env.VITE_API_URL ?? "https://api.riotinto.henriquesf.me") +
-  "/api/auth";
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [password, setPassword] = useState<string | null>(() => {
-    // Restore from sessionStorage so refresh doesn't require re-entry
-    const stored = sessionStorage.getItem(PASSWORD_KEY);
-    return stored ?? null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const isUnlocked = password !== null;
-
-  const unlock = useCallback(async (pwd: string): Promise<boolean> => {
-    try {
-      const resp = await fetch(AUTH_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: pwd }),
-      });
-      if (resp.ok) {
-        setPassword(pwd);
-        sessionStorage.setItem(PASSWORD_KEY, pwd);
-        return true;
+  // Check session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data } = await authClient.getSession();
+        setUser(data?.user as User | null);
+      } catch {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      return false;
-    } catch {
-      return false;
-    }
+    };
+    checkSession();
   }, []);
 
-  const lock = useCallback(() => {
-    setPassword(null);
-    sessionStorage.removeItem(PASSWORD_KEY);
-  }, []);
+  const signIn = useCallback(
+    async (email: string, password: string): Promise<{ error?: string }> => {
+      try {
+        const result = await authClient.signIn.email({
+          email,
+          password,
+        });
 
-  return (
-    <AuthContext.Provider value={{ password, isUnlocked, unlock, lock }}>
-      {children}
-    </AuthContext.Provider>
+        if (result.error) {
+          return { error: result.error.message };
+        }
+
+        // Refresh user session
+        const { data } = await authClient.getSession();
+        setUser(data?.user as User | null);
+        return {};
+      } catch (error) {
+        return {
+          error: error instanceof Error ? error.message : "Sign in failed",
+        };
+      }
+    },
+    [],
   );
+
+  const signUp = useCallback(
+    async (
+      email: string,
+      password: string,
+      name: string,
+    ): Promise<{ error?: string }> => {
+      try {
+        const result = await authClient.signUp.email({
+          email,
+          password,
+          name,
+        });
+
+        if (result.error) {
+          return { error: result.error.message };
+        }
+
+        // Refresh user session
+        const { data } = await authClient.getSession();
+        setUser(data?.user as User | null);
+        return {};
+      } catch (error) {
+        return {
+          error: error instanceof Error ? error.message : "Sign up failed",
+        };
+      }
+    },
+    [],
+  );
+
+  const signOut = useCallback(async () => {
+    await authClient.signOut();
+    setUser(null);
+  }, []);
+
+  const value: AuthContextValue = {
+    user,
+    isAuthenticated: user !== null,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

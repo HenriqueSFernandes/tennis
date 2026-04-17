@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id                String    @id @default(uuid())
+  username          String    @unique
+  displayName       String    @map("display_name")
+  phone             String
+  encryptedPassword String    @map("encrypted_password")
+  salt              String
+  iv                String
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  sessions  Session?
+  favorites Favorite[]
+
+  @@map("accounts")
+}
+
+model Session {
+  accountId String  @id @map("account_id")
+  cookies   String
+  csrfToken String  @map("csrf_token")
+  userId    String  @map("user_id")
+  cachedAt  BigInt  @map("cached_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  accountId String   @map("account_id")
+  courtId   Int      @map("court_id")
+  dayOfWeek Int      @map("day_of_week")
+  time      String
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, courtId, dayOfWeek, time])
+  @@map("favorites")
+}

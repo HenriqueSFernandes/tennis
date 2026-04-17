@@ -7,32 +7,24 @@ import type {
   CurrentBookingInfo,
 } from "../../../types";
 
-export async function getBookings(
-  password: string,
-): Promise<CurrentBookingInfo[]> {
-  return request<CurrentBookingInfo[]>("/bookings", password);
+export async function getBookings(): Promise<CurrentBookingInfo[]> {
+  return request<CurrentBookingInfo[]>("/bookings");
 }
 
-export async function exportBookings(
-  password: string,
-  accountId?: string,
-): Promise<Blob> {
+export async function exportBookings(accountId?: string): Promise<Blob> {
   const queryParams = accountId ? `?accountId=${accountId}` : "";
-  return fetchBlob(`/bookings/export${queryParams}`, password);
+  return fetchBlob(`/bookings/export${queryParams}`);
 }
 
-export async function book(password: string, data: BookRequest): Promise<void> {
-  await request<{ ok: boolean }>("/book", password, {
+export async function book(data: BookRequest): Promise<void> {
+  await request<{ ok: boolean }>("/book", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function cancelBook(
-  password: string,
-  data: CancelRequest,
-): Promise<void> {
-  await request<{ ok: boolean }>("/book", password, {
+export async function cancelBook(data: CancelRequest): Promise<void> {
+  await request<{ ok: boolean }>("/book", {
     method: "DELETE",
     body: JSON.stringify(data),
   });

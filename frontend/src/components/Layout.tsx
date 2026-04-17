@@ -2,7 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 
 export function Layout() {
-  const { lock } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
 
   const navItems = [
@@ -10,6 +10,20 @@ export function Layout() {
     { path: "/schedule", label: "Campos", icon: CalendarIcon },
     { path: "/accounts", label: "Contas", icon: UsersIcon },
   ];
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col">
@@ -28,14 +42,28 @@ export function Layout() {
             </div>
           </div>
 
-          <button
-            onClick={lock}
-            className="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-slate-800/50"
-            title="Sair"
-          >
-            <LogoutIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {/* User avatar */}
+            {user && (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg shadow-emerald-900/20">
+                  {getInitials(user.name)}
+                </div>
+                <span className="hidden sm:block text-slate-300 text-sm">
+                  {user.name}
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-slate-800/50"
+              title="Sair"
+            >
+              <LogoutIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
+          </div>
         </div>
       </header>
 

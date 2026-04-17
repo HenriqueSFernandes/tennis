@@ -16,14 +16,13 @@ export class ApiError extends Error {
 
 export async function request<T>(
   path: string,
-  password: string,
   options: RequestInit = {},
 ): Promise<T> {
   const resp = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: "include", // Include cookies for Better Auth session
     headers: {
       "Content-Type": "application/json",
-      "X-App-Password": password,
       ...options.headers,
     },
   });
@@ -42,11 +41,9 @@ export async function request<T>(
   return resp.json() as Promise<T>;
 }
 
-export async function fetchBlob(path: string, password: string): Promise<Blob> {
+export async function fetchBlob(path: string): Promise<Blob> {
   const resp = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "X-App-Password": password,
-    },
+    credentials: "include", // Include cookies for Better Auth session
   });
 
   if (!resp.ok) {

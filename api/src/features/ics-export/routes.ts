@@ -1,12 +1,16 @@
 import type { Context } from "hono";
 import { generateIcsContent } from "../../utils/ics.js";
+import { getUserIdFromContext } from "../auth/middleware.js";
 import { fetchAllBookings } from "./service.js";
 
 export async function handleExportBookings(c: Context) {
+  const userId = getUserIdFromContext(c);
+  if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
   const accountId = c.req.query("accountId");
 
   try {
-    let bookings = await fetchAllBookings();
+    let bookings = await fetchAllBookings(userId);
 
     if (accountId) {
       bookings = bookings.filter((b) => b.accountId === accountId);

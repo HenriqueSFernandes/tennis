@@ -16,6 +16,8 @@
           buildInputs = with pkgs; [
             nodejs_22
             nodePackages.npm
+            openssl
+            prisma-engines
           ];
 
           shellHook = ''

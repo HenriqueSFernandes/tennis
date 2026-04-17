@@ -25,6 +25,7 @@ import {
 } from "./features/favorites/routes.js";
 import { handleExportBookings } from "./features/ics-export/routes.js";
 import { handleGetSchedule } from "./features/schedule/routes.js";
+import { auth } from "./utils/auth.js";
 
 // ── App setup ────────────────────────────────────────────────────────────────
 
@@ -45,32 +46,35 @@ app.use(
         return origin;
       return null;
     },
-    allowHeaders: ["Content-Type", "X-App-Password"],
+    allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
     maxAge: 86400,
   }),
 );
 
-app.use("/api/*", authMiddleware);
+// ── Better Auth ──────────────────────────────────────────────────────────────
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+// Mount Better Auth handler for all auth routes
+app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-app.post("/api/auth", async (c) => {
-  const { password } = await c.req.json<{ password: string }>();
-  if (password === process.env["APP_PASSWORD"]) {
-    return c.json({ ok: true });
-  }
-  return c.json({ ok: false }, 401);
-});
+// ── Protected Routes ─────────────────────────────────────────────────────────
 
-// ── Accounts ─────────────────────────────────────────────────────────────────
+app.use("/api/riotinto-accounts/*", authMiddleware);
+app.use("/api/bookings/*", authMiddleware);
+app.use("/api/book/*", authMiddleware);
+app.use("/api/schedule", authMiddleware);
+app.use("/api/favorites/*", authMiddleware);
+app.use("/api/bulk-book", authMiddleware);
 
-app.get("/api/accounts", handleListAccounts);
-app.post("/api/accounts", handleAddAccount);
-app.delete("/api/accounts/:id", handleDeleteAccount);
-app.put("/api/accounts/:id", handleUpdateAccount);
+// ── Riotinto Accounts ────────────────────────────────────────────────────────
 
-// ── Bookings ──────────────────────────────────────────────────────────────────
+app.get("/api/riotinto-accounts", handleListAccounts);
+app.post("/api/riotinto-accounts", handleAddAccount);
+app.delete("/api/riotinto-accounts/:id", handleDeleteAccount);
+app.put("/api/riotinto-accounts/:id", handleUpdateAccount);
+
+// ── Bookings ─────────────────────────────────────────────────────────────────
 
 app.get("/api/bookings", handleGetBookings);
 app.post("/api/book", handleBook);

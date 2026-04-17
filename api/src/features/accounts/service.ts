@@ -1,4 +1,3 @@
-import { APP_PASSWORD } from "../../config/index.js";
 import {
   getSession,
   cancelBooking as riotintoCancelBooking,
@@ -15,7 +14,6 @@ import type {
 } from "../../types/index.js";
 import { isPastDate } from "../../utils/index.js";
 import {
-  db,
   getDecryptedPassword,
   getSiteUserId,
   getStoredAccount,
@@ -32,54 +30,74 @@ import {
 
 // ── Accounts ──────────────────────────────────────────────────────────────────
 
-export function listAccounts() {
-  return repoListAccounts();
+export function listAccounts(userId: string) {
+  return repoListAccounts(userId);
 }
 
-export async function createAccount(data: AddAccountRequest) {
+export async function createAccount(userId: string, data: AddAccountRequest) {
   return repoAddAccount(
+    userId,
     data.username,
     data.password,
     data.displayName,
     data.phone,
-    APP_PASSWORD,
   );
 }
 
-export function removeAccount(id: string) {
-  return repoDeleteAccount(id);
+export function removeAccount(userId: string, id: string) {
+  return repoDeleteAccount(userId, id);
 }
 
-export function editAccount(id: string, data: UpdateAccountRequest) {
-  return repoUpdateAccount(id, data.displayName, data.phone);
+export function editAccount(
+  userId: string,
+  id: string,
+  data: UpdateAccountRequest,
+) {
+  return repoUpdateAccount(userId, id, data.displayName, data.phone);
 }
 
 // ── Schedule ──────────────────────────────────────────────────────────────────
 
 export async function getSchedule(
+  userId: string,
   weekOffset: number,
 ): Promise<{ courts: CourtSchedule[]; weekOffset: number } | null> {
-  const accounts = repoListAccounts();
+  const accounts = await repoListAccounts(userId);
   if (accounts.length === 0) return null;
 
   const firstAcc = accounts[0]!;
-  const stored = getStoredAccount(firstAcc.id);
+  const stored = await getStoredAccount(userId, firstAcc.id);
   if (!stored) return null;
 
-  const pwd = await getDecryptedPassword(firstAcc.id, APP_PASSWORD);
+  const pwd = await getDecryptedPassword(userId, firstAcc.id);
   if (!pwd) return null;
 
-  await getSession(db, firstAcc.id, stored.username, pwd);
+  // Refresh sessions for ALL accounts to ensure ourUsers map is populated correctly
+  await Promise.all(
+    accounts.map(async (acc) => {
+      try {
+        const accStored = await getStoredAccount(userId, acc.id);
+        if (!accStored) return;
+        const accPwd = await getDecryptedPassword(userId, acc.id);
+        if (!accPwd) return;
+        await getSession(acc.id, accStored.username, accPwd);
+      } catch (e) {
+        console.error(
+          `Failed to refresh session for account ${acc.id} (${acc.username}):`,
+          e,
+        );
+      }
+    }),
+  );
 
   const ourUsers = new Map<string, string>();
   for (const acc of accounts) {
-    const siteUserId = getSiteUserId(db, acc.id);
+    const siteUserId = await getSiteUserId(acc.id);
     if (siteUserId && siteUserId !== "0") ourUsers.set(siteUserId, acc.id);
   }
 
   const [court1, court2] = await Promise.all([
     riotintoGetCourtSchedule(
-      db,
       firstAcc.id,
       stored.username,
       pwd,
@@ -88,7 +106,6 @@ export async function getSchedule(
       ourUsers,
     ),
     riotintoGetCourtSchedule(
-      db,
       firstAcc.id,
       stored.username,
       pwd,
@@ -103,18 +120,17 @@ export async function getSchedule(
 
 // ── Bookings ──────────────────────────────────────────────────────────────────
 
-export async function getBookings() {
-  const accounts = repoListAccounts();
+export async function getBookings(userId: string) {
+  const accounts = await repoListAccounts(userId);
 
   const results = await Promise.allSettled(
     accounts.flatMap((acc) =>
       [1, 2].map(async (courtId) => {
-        const stored = getStoredAccount(acc.id);
+        const stored = await getStoredAccount(userId, acc.id);
         if (!stored) return null;
-        const pwd = await getDecryptedPassword(acc.id, APP_PASSWORD);
+        const pwd = await getDecryptedPassword(userId, acc.id);
         if (!pwd) return null;
         const current = await riotintoGetCurrentBooking(
-          db,
           acc.id,
           stored.username,
           pwd,
@@ -138,6 +154,7 @@ export async function getBookings() {
 }
 
 export async function book(
+  userId: string,
   accountId: string,
   courtId: number,
   date: string,
@@ -146,14 +163,13 @@ export async function book(
   hora: number,
   semana: number,
 ) {
-  const stored = getStoredAccount(accountId);
+  const stored = await getStoredAccount(userId, accountId);
   if (!stored) return { success: false, error: "Account not found" };
 
-  const pwd = await getDecryptedPassword(accountId, APP_PASSWORD);
+  const pwd = await getDecryptedPassword(userId, accountId);
   if (!pwd) return { success: false, error: "Could not decrypt credentials" };
 
   const result = await riotintoMakeBooking(
-    db,
     accountId,
     stored.username,
     pwd,
@@ -174,6 +190,7 @@ export async function book(
 }
 
 export async function cancel(
+  userId: string,
   accountId: string,
   courtId: number,
   date: string,
@@ -182,14 +199,13 @@ export async function cancel(
   hora: number,
   semana: number,
 ) {
-  const stored = getStoredAccount(accountId);
+  const stored = await getStoredAccount(userId, accountId);
   if (!stored) return { success: false, error: "Account not found" };
 
-  const pwd = await getDecryptedPassword(accountId, APP_PASSWORD);
+  const pwd = await getDecryptedPassword(userId, accountId);
   if (!pwd) return { success: false, error: "Could not decrypt credentials" };
 
   const result = await riotintoCancelBooking(
-    db,
     accountId,
     stored.username,
     pwd,
@@ -211,21 +227,28 @@ export async function cancel(
 
 // ── Favorites ─────────────────────────────────────────────────────────────────
 
-export function listFavorites(accountId?: string) {
-  return repoListFavorites(accountId);
+export function listFavorites(userId: string, accountId?: string) {
+  return repoListFavorites(userId, accountId);
 }
 
-export function addFavorite(
+export async function addFavorite(
+  userId: string,
   accountId: string,
   courtId: number,
   dayOfWeek: number,
   time: string,
   name?: string,
 ) {
-  const existing = repoIsFavorite(accountId, courtId, dayOfWeek, time);
+  const existing = await repoIsFavorite(
+    userId,
+    accountId,
+    courtId,
+    dayOfWeek,
+    time,
+  );
   if (existing) return { error: "Favorite already exists" };
 
-  const favorite = repoAddFavorite({
+  const favorite = await repoAddFavorite(userId, {
     accountId,
     courtId,
     dayOfWeek,
@@ -235,12 +258,12 @@ export function addFavorite(
   return { favorite };
 }
 
-export function updateFavorite(id: string, name: string) {
-  return repoUpdateFavorite(id, name);
+export function updateFavorite(userId: string, id: string, name: string) {
+  return repoUpdateFavorite(userId, id, name);
 }
 
-export function removeFavorite(id: string) {
-  return repoDeleteFavorite(id);
+export function removeFavorite(userId: string, id: string) {
+  return repoDeleteFavorite(userId, id);
 }
 
 // ── Bulk Book ─────────────────────────────────────────────────────────────────
@@ -265,6 +288,7 @@ async function withBookingLock<T>(
 }
 
 export async function bulkBook(
+  userId: string,
   bookings: BulkBookItem[],
   forceCancel: boolean,
 ): Promise<BulkBookResult> {
@@ -274,10 +298,10 @@ export async function bulkBook(
     failed: [],
   };
 
-  const accounts = repoListAccounts();
+  const accounts = await repoListAccounts(userId);
   const ourUsers = new Map<string, string>();
   for (const acc of accounts) {
-    const siteUserId = getSiteUserId(db, acc.id);
+    const siteUserId = await getSiteUserId(acc.id);
     if (siteUserId && siteUserId !== "0") ourUsers.set(siteUserId, acc.id);
   }
 
@@ -293,7 +317,7 @@ export async function bulkBook(
       for (const booking of accountBookings) {
         const { courtId, date, dayIndex, turno, hora, semana } = booking;
 
-        const stored = getStoredAccount(accountId);
+        const stored = await getStoredAccount(userId, accountId);
         if (!stored) {
           result.failed.push({
             accountId,
@@ -304,7 +328,7 @@ export async function bulkBook(
           continue;
         }
 
-        const pwd = await getDecryptedPassword(accountId, APP_PASSWORD);
+        const pwd = await getDecryptedPassword(userId, accountId);
         if (!pwd) {
           result.failed.push({
             accountId,
@@ -322,8 +346,7 @@ export async function bulkBook(
 
         try {
           const schedule = await riotintoGetCourtSchedule(
-            db,
-            stored.id,
+            accountId,
             stored.username,
             pwd,
             courtId,
@@ -346,7 +369,6 @@ export async function bulkBook(
 
         if (forceCancel) {
           await riotintoCancelBooking(
-            db,
             accountId,
             stored.username,
             pwd,
@@ -362,7 +384,6 @@ export async function bulkBook(
         }
 
         const bookResult = await riotintoMakeBooking(
-          db,
           accountId,
           stored.username,
           pwd,

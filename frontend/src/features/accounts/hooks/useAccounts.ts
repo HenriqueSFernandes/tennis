@@ -1,7 +1,6 @@
 // Accounts hook
 
 import { useCallback, useState } from "react";
-import { useAuth } from "../../../AuthContext";
 import { useDataCache } from "../../../DataCacheContext";
 import type {
   AccountSummary,
@@ -15,14 +14,12 @@ import {
 } from "../api";
 
 export function useAccounts() {
-  const { password } = useAuth();
   const { getAccounts: getCachedAccounts, invalidate } = useDataCache();
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const loadAccounts = useCallback(async () => {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
@@ -33,13 +30,12 @@ export function useAccounts() {
     } finally {
       setLoading(false);
     }
-  }, [password, getCachedAccounts]);
+  }, [getCachedAccounts]);
 
   const addAccount = useCallback(
     async (data: AddAccountRequest): Promise<AccountSummary | null> => {
-      if (!password) return null;
       try {
-        const newAcc = await apiAddAccount(password, data);
+        const newAcc = await apiAddAccount(data);
         invalidate("accounts");
         setAccounts((prev) => [...prev, newAcc]);
         return newAcc;
@@ -48,14 +44,13 @@ export function useAccounts() {
         return null;
       }
     },
-    [password, invalidate],
+    [invalidate],
   );
 
   const deleteAccount = useCallback(
     async (id: string): Promise<boolean> => {
-      if (!password) return false;
       try {
-        await apiDeleteAccount(password, id);
+        await apiDeleteAccount(id);
         invalidate("accounts");
         setAccounts((prev) => prev.filter((a) => a.id !== id));
         return true;
@@ -64,14 +59,13 @@ export function useAccounts() {
         return false;
       }
     },
-    [password, invalidate],
+    [invalidate],
   );
 
   const updateAccount = useCallback(
     async (id: string, data: UpdateAccountRequest): Promise<boolean> => {
-      if (!password) return false;
       try {
-        const updated = await apiUpdateAccount(password, id, data);
+        const updated = await apiUpdateAccount(id, data);
         invalidate("accounts");
         setAccounts((prev) => prev.map((a) => (a.id === id ? updated : a)));
         return true;
@@ -80,7 +74,7 @@ export function useAccounts() {
         return false;
       }
     },
-    [password, invalidate],
+    [invalidate],
   );
 
   return {

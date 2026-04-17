@@ -1,8 +1,7 @@
 // Dashboard page
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
 import {
   exportBookings as apiExportBookings,
   getFavorites as apiGetFavorites,
@@ -56,7 +55,6 @@ interface ScheduleData {
 }
 
 export function Dashboard() {
-  const { password } = useAuth();
   const navigate = useNavigate();
   const { getSchedule, getAccounts, refresh, staleKeys } = useDataCache();
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
@@ -69,25 +67,22 @@ export function Dashboard() {
   const [showBulkBookModal, setShowBulkBookModal] = useState(false);
 
   async function loadData() {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
-      const [s0, s1, s2, a, f] = await Promise.all([
+      const [s0, s1, a, f] = await Promise.all([
         getSchedule(0),
         getSchedule(1),
-        getSchedule(2),
         getAccounts(),
-        apiGetFavorites(password),
+        apiGetFavorites(),
       ]);
 
       setSchedules([
         { weekOffset: 0, courts: s0.courts },
         { weekOffset: 1, courts: s1.courts },
-        { weekOffset: 2, courts: s2.courts },
       ]);
 
-      const allSlots = [s0, s1, s2].flatMap((s) =>
+      const allSlots = [s0, s1].flatMap((s) =>
         s.courts.flatMap((court) =>
           court.slots
             .filter((slot) => slot.isOurs)
@@ -135,9 +130,13 @@ export function Dashboard() {
     }
   }
 
+  const mountedRef = useRef(false);
+
   useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
     loadData();
-  }, [password, getSchedule, getAccounts]);
+  }, [loadData]);
 
   const handleRefresh = async () => {
     await refresh();
@@ -145,11 +144,10 @@ export function Dashboard() {
   };
 
   const handleExport = async () => {
-    if (!password) return;
     setExporting(true);
     setError("");
     try {
-      const blob = await apiExportBookings(password);
+      const blob = await apiExportBookings();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -315,26 +313,23 @@ export function Dashboard() {
   }
 
   async function handleDeleteFavorite(id: string) {
-    if (!password) return;
     const { deleteFavorite } = await import("../api");
-    await deleteFavorite(password, id);
-    const f = await apiGetFavorites(password);
+    await deleteFavorite(id);
+    const f = await apiGetFavorites();
     setFavorites(f);
   }
 
   async function handleUpdateFavoriteName(id: string, name: string) {
-    if (!password) return;
     // Import directly to avoid circular dependency
     const { updateFavorite } = await import("../api");
-    await updateFavorite(password, id, { name });
-    const f = await apiGetFavorites(password);
+    await updateFavorite(id, { name });
+    const f = await apiGetFavorites();
     setFavorites(f);
   }
 
   const isDashboardStale =
     staleKeys.has("schedule:0") ||
     staleKeys.has("schedule:1") ||
-    staleKeys.has("schedule:2") ||
     staleKeys.has("accounts");
 
   return (
@@ -479,9 +474,8 @@ export function Dashboard() {
       )}
 
       {/* Bulk Book Modal */}
-      {showBulkBookModal && password && (
+      {showBulkBookModal && (
         <BulkBookModal
-          password={password}
           favorites={computeFavoritesWithAvailability()}
           accounts={accounts}
           onClose={() => setShowBulkBookModal(false)}

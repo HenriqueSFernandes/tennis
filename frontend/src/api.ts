@@ -1,11 +1,6 @@
 // Re-exports from new feature-based API structure for backwards compatibility
 
-export {
-  ApiError,
-  fetchBlob,
-  request,
-  verifyPassword,
-} from "./core/api";
+export { ApiError, fetchBlob, request } from "./core/api";
 
 export {
   addAccount,

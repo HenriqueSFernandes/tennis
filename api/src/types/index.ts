@@ -1,7 +1,3 @@
-import type Database from "better-sqlite3";
-
-export type Db = InstanceType<typeof Database>;
-
 // Stored account (encrypted credentials)
 export interface StoredAccount {
   id: string;

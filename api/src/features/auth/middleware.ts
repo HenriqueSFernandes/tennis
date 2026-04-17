@@ -1,31 +1,27 @@
 import type { Context, Next } from "hono";
-import { APP_PASSWORD, isOriginAllowed } from "../../config/index.js";
+import { auth } from "../../utils/auth.js";
 
 export async function authMiddleware(c: Context, next: Next) {
-  if (c.req.path === "/api/auth") return next();
+  // Better Auth handles session validation automatically
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
 
-  const provided = c.req.header("X-App-Password");
-  if (!provided || provided !== APP_PASSWORD) {
+  if (!session) {
     return c.json({ error: "Unauthorized" }, 401);
   }
-  return next();
+
+  // Store user info in context for later use
+  c.set("userId", session.user.id);
+  c.set("user", session.user);
+
+  await next();
 }
 
-export function corsMiddleware() {
-  return async (c: Context, next: Next) => {
-    const origin = c.req.header("origin");
+export function getUserIdFromContext(c: Context): string | null {
+  return c.get("userId") ?? null;
+}
 
-    if (isOriginAllowed(origin)) {
-      c.header("Access-Control-Allow-Origin", origin ?? "*");
-    }
-
-    c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    c.header("Access-Control-Allow-Headers", "Content-Type, X-App-Password");
-
-    if (c.req.method === "OPTIONS") {
-      return c.body(null, 204);
-    }
-
-    return next();
-  };
+export function getUserFromContext(c: Context) {
+  return c.get("user");
 }

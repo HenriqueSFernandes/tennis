@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { useAuth } from "../AuthContext";
 import {
   addFavorite,
   book,
@@ -19,10 +18,9 @@ import type {
   ScheduleSlot,
 } from "../types";
 
-const WEEK_LABELS = ["Esta semana", "Próxima semana", "Daqui a 2 semanas"];
+const WEEK_LABELS = ["Esta semana", "Próxima semana"];
 
 export function Schedule() {
-  const { password } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { getSchedule, getAccounts, invalidate, refresh, staleKeys } =
@@ -56,14 +54,13 @@ export function Schedule() {
   );
 
   const loadData = useCallback(async () => {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
       const [s, a, f] = await Promise.all([
         getSchedule(weekOffset),
         getAccounts(),
-        getFavorites(password),
+        getFavorites(),
       ]);
       setSchedule(s);
       setAccounts(a);
@@ -73,7 +70,7 @@ export function Schedule() {
     } finally {
       setLoading(false);
     }
-  }, [password, weekOffset, getSchedule, getAccounts]);
+  }, [weekOffset, getSchedule, getAccounts]);
 
   useEffect(() => {
     loadData();
@@ -141,7 +138,6 @@ export function Schedule() {
     courtId: number,
     isFavorited: boolean,
   ) {
-    if (!password) return;
     if (isFavorited) {
       const fav = favorites.find(
         (f) =>
@@ -150,9 +146,9 @@ export function Schedule() {
           f.courtId === courtId,
       );
       if (fav) {
-        await deleteFavorite(password, fav.id);
+        await deleteFavorite(fav.id);
       }
-      const f = await getFavorites(password);
+      const f = await getFavorites();
       setFavorites(f);
     } else {
       setAddFavoriteSlot(slot);
@@ -161,8 +157,8 @@ export function Schedule() {
   }
 
   async function handleAddFavorite(accountId: string) {
-    if (!addFavoriteSlot || !addFavoriteCourtId || !password) return;
-    await addFavorite(password, {
+    if (!addFavoriteSlot || !addFavoriteCourtId) return;
+    await addFavorite({
       accountId,
       courtId: addFavoriteCourtId,
       dayOfWeek: addFavoriteSlot.dayIndex,
@@ -170,13 +166,13 @@ export function Schedule() {
     });
     setAddFavoriteSlot(null);
     setAddFavoriteCourtId(null);
-    const f = await getFavorites(password);
+    const f = await getFavorites();
     setFavorites(f);
   }
 
   async function handleBook(accountId: string) {
-    if (!bookSlot || !bookCourtId || !password) return;
-    await book(password, {
+    if (!bookSlot || !bookCourtId) return;
+    await book({
       accountId,
       courtId: bookCourtId,
       date: bookSlot.date,
@@ -193,8 +189,8 @@ export function Schedule() {
   }
 
   async function handleCancel() {
-    if (!cancelSlot || !cancelCourtId || !password) return;
-    await cancelBook(password, {
+    if (!cancelSlot || !cancelCourtId) return;
+    await cancelBook({
       accountId: cancelSlot.ourAccountId ?? "",
       courtId: cancelCourtId,
       date: cancelSlot.date,
@@ -281,9 +277,9 @@ export function Schedule() {
           <button
             onClick={() => {
               setWeekDirection("next");
-              setWeekOffset((w) => Math.min(2, w + 1));
+              setWeekOffset((w) => Math.min(1, w + 1));
             }}
-            disabled={weekOffset >= 2}
+            disabled={weekOffset >= 1}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-all duration-200 btn-press"
           >
             <span className="hidden sm:inline text-sm font-medium">
@@ -295,7 +291,7 @@ export function Schedule() {
 
         {/* Week Progress Indicator */}
         <div className="flex gap-1.5 mt-3 px-2 pb-1">
-          {[0, 1, 2].map((offset) => (
+          {[0, 1].map((offset) => (
             <button
               key={offset}
               onClick={() => {

@@ -1,25 +1,24 @@
-import { APP_PASSWORD } from "../../config/index.js";
 import { getCurrentBooking } from "../../integrations/riotinto/index.js";
 import type { BookingWithAccount } from "../../types/index.js";
 import {
-  db,
   getDecryptedPassword,
   getStoredAccount,
 } from "../accounts/repository.js";
 import { listAccounts } from "../accounts/service.js";
 
-export async function fetchAllBookings(): Promise<BookingWithAccount[]> {
-  const accounts = listAccounts();
+export async function fetchAllBookings(
+  userId: string,
+): Promise<BookingWithAccount[]> {
+  const accounts = await listAccounts(userId);
 
   const results = await Promise.allSettled(
     accounts.flatMap((acc) =>
       [1, 2].map(async (courtId) => {
-        const stored = getStoredAccount(acc.id);
+        const stored = await getStoredAccount(userId, acc.id);
         if (!stored) return null;
-        const pwd = await getDecryptedPassword(acc.id, APP_PASSWORD);
+        const pwd = await getDecryptedPassword(userId, acc.id);
         if (!pwd) return null;
         const current = await getCurrentBooking(
-          db,
           acc.id,
           stored.username,
           pwd,

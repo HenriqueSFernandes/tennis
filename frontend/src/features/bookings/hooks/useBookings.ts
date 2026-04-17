@@ -1,7 +1,6 @@
 // Bookings hook
 
 import { useCallback, useState } from "react";
-import { useAuth } from "../../../AuthContext";
 import type {
   BookRequest,
   CancelRequest,
@@ -15,58 +14,50 @@ import {
 } from "../api";
 
 export function useBookings() {
-  const { password } = useAuth();
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const loadBookings = useCallback(async () => {
-    if (!password) return;
     setLoading(true);
     setError("");
     try {
-      const data = await apiGetBookings(password);
+      const data = await apiGetBookings();
       setBookings(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar reservas");
     } finally {
       setLoading(false);
     }
-  }, [password]);
+  }, []);
 
-  const book = useCallback(
-    async (data: BookRequest): Promise<boolean> => {
-      if (!password) return false;
-      try {
-        await apiBook(password, data);
-        return true;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erro ao fazer reserva");
-        return false;
-      }
-    },
-    [password],
-  );
+  const book = useCallback(async (data: BookRequest): Promise<boolean> => {
+    try {
+      await apiBook(data);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao fazer reserva");
+      return false;
+    }
+  }, []);
 
   const cancelBook = useCallback(
     async (data: CancelRequest): Promise<boolean> => {
-      if (!password) return false;
       try {
-        await apiCancelBook(password, data);
+        await apiCancelBook(data);
         return true;
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erro ao cancelar reserva");
         return false;
       }
     },
-    [password],
+    [],
   );
 
   const exportBookings = useCallback(
     async (accountId?: string): Promise<Blob | null> => {
-      if (!password) return null;
       try {
-        return await apiExportBookings(password, accountId);
+        return await apiExportBookings(accountId);
       } catch (e) {
         setError(
           e instanceof Error ? e.message : "Erro ao exportar calendário",
@@ -74,7 +65,7 @@ export function useBookings() {
         return null;
       }
     },
-    [password],
+    [],
   );
 
   return {
