@@ -1,7 +1,7 @@
 import type { Context } from "hono";
-import type { BookRequest, CancelRequest } from "../../types/index.js";
-import { book, cancel, getBookings } from "../accounts/service.js";
-import { getUserIdFromContext } from "../auth/middleware.js";
+import type { BookRequest, CancelRequest } from "../../types/index";
+import { book, cancel, getBookings } from "../accounts/service";
+import { getUserIdFromContext } from "../auth/middleware";
 
 export async function handleGetBookings(c: Context) {
   try {

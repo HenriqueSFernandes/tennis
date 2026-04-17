@@ -1,5 +1,5 @@
 import * as ics from "ics";
-import type { BookingWithAccount } from "../types/index.js";
+import type { BookingWithAccount } from "../types/index";
 
 export function dateToIcsArray(date: Date): ics.DateArray {
   return [

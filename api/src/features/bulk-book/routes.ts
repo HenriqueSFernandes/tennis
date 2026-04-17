@@ -1,7 +1,7 @@
 import type { Context } from "hono";
-import type { BulkBookRequest } from "../../types/index.js";
-import { bulkBook } from "../accounts/service.js";
-import { getUserIdFromContext } from "../auth/middleware.js";
+import type { BulkBookRequest } from "../../types/index";
+import { bulkBook } from "../accounts/service";
+import { getUserIdFromContext } from "../auth/middleware";
 
 export async function handleBulkBook(c: Context) {
   try {

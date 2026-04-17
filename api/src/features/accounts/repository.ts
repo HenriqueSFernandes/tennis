@@ -1,17 +1,17 @@
-import { decrypt, encrypt } from "../../core/crypto.js";
+import { decrypt, encrypt } from "../../core/crypto";
 import {
   clearSession,
   getCachedSession,
   getSiteUserId,
   saveSession,
-} from "../../core/db.js";
+} from "../../core/db";
 import type {
   AccountSummary,
   AddFavoriteRequest,
   Favorite,
   StoredAccount,
-} from "../../types/index.js";
-import { prisma } from "../../utils/prisma.js";
+} from "../../types/index";
+import { prisma } from "../../utils/prisma";
 
 export { clearSession, getCachedSession, getSiteUserId, saveSession };
 

@@ -1,1 +1,1 @@
-export { handleBook, handleCancel, handleGetBookings } from "./routes.js";
+export { handleBook, handleCancel, handleGetBookings } from "./routes";

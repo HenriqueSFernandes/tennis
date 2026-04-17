@@ -3,4 +3,4 @@ export {
   getCachedSession,
   getSiteUserId,
   saveSession,
-} from "./db.js";
+} from "./db";

@@ -7,12 +7,12 @@
  * 3. Stripping the wrapper and parsing the inner JSON
  */
 
-import { clearSession, getCachedSession, saveSession } from "../../core/db.js";
+import { clearSession, getCachedSession, saveSession } from "../../core/db";
 import type {
   CachedSession,
   CourtSchedule,
   ScheduleSlot,
-} from "../../types/index.js";
+} from "../../types/index";
 
 const BASE_URL = "https://www.riotinto.pt";
 const CALLBACK = "cb";

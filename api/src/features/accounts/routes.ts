@@ -1,16 +1,16 @@
 import type { Context } from "hono";
-import { verifyCredentials } from "../../integrations/riotinto/client.js";
+import { verifyCredentials } from "../../integrations/riotinto/client";
 import type {
   AddAccountRequest,
   UpdateAccountRequest,
-} from "../../types/index.js";
-import { getUserIdFromContext } from "../auth/middleware.js";
+} from "../../types/index";
+import { getUserIdFromContext } from "../auth/middleware";
 import {
   createAccount,
   editAccount,
   listAccounts,
   removeAccount,
-} from "./service.js";
+} from "./service";
 
 export async function handleListAccounts(c: Context) {
   const userId = getUserIdFromContext(c);

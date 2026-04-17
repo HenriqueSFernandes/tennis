@@ -1,1 +1,1 @@
-export { handleGetSchedule } from "./routes.js";
+export { handleGetSchedule } from "./routes";

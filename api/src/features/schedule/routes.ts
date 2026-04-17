@@ -1,6 +1,6 @@
 import type { Context } from "hono";
-import { getSchedule } from "../accounts/service.js";
-import { getUserIdFromContext } from "../auth/middleware.js";
+import { getSchedule } from "../accounts/service";
+import { getUserIdFromContext } from "../auth/middleware";
 
 export async function handleGetSchedule(c: Context) {
   try {

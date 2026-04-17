@@ -1,11 +1,10 @@
 export {
   clearSession,
-  db,
   getCachedSession,
   getDecryptedPassword,
   getSiteUserId,
   getStoredAccount,
-} from "./repository.js";
+} from "./repository";
 
 export {
   addFavorite,
@@ -21,4 +20,4 @@ export {
   removeAccount,
   removeFavorite,
   updateFavorite,
-} from "./service.js";
+} from "./service";
