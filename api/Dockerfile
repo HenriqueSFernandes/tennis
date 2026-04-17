@@ -7,8 +7,10 @@ COPY package.json ./
 RUN npm install
 
 COPY tsconfig.json ./
+COPY prisma/ ./prisma/
 COPY src/ ./src/
 
+RUN npx prisma generate
 RUN npm run build
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
@@ -21,6 +23,7 @@ COPY package.json ./
 RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/generated ./generated
 
 VOLUME ["/data"]
 
