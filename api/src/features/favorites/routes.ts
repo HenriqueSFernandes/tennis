@@ -2,14 +2,14 @@ import type { Context } from "hono";
 import type {
   AddFavoriteRequest,
   UpdateFavoriteRequest,
-} from "../../types/index.js";
+} from "../../types/index";
 import {
   addFavorite,
   listFavorites,
   removeFavorite,
   updateFavorite,
-} from "../accounts/service.js";
-import { getUserIdFromContext } from "../auth/middleware.js";
+} from "../accounts/service";
+import { getUserIdFromContext } from "../auth/middleware";
 
 export async function handleListFavorites(c: Context) {
   const userId = getUserIdFromContext(c);

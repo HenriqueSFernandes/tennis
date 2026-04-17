@@ -4,15 +4,15 @@ import {
   getCourtSchedule as riotintoGetCourtSchedule,
   getCurrentBooking as riotintoGetCurrentBooking,
   makeBooking as riotintoMakeBooking,
-} from "../../integrations/riotinto/index.js";
+} from "../../integrations/riotinto/index";
 import type {
   AddAccountRequest,
   BulkBookItem,
   BulkBookResult,
   CourtSchedule,
   UpdateAccountRequest,
-} from "../../types/index.js";
-import { isPastDate } from "../../utils/index.js";
+} from "../../types/index";
+import { isPastDate } from "../../utils/index";
 import {
   getDecryptedPassword,
   getSiteUserId,
@@ -26,7 +26,7 @@ import {
   listFavorites as repoListFavorites,
   updateAccount as repoUpdateAccount,
   updateFavorite as repoUpdateFavorite,
-} from "./repository.js";
+} from "./repository";
 
 // ── Accounts ──────────────────────────────────────────────────────────────────
 

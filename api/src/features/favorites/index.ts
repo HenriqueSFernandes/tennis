@@ -3,4 +3,4 @@ export {
   handleDeleteFavorite,
   handleListFavorites,
   handleUpdateFavorite,
-} from "./routes.js";
+} from "./routes";

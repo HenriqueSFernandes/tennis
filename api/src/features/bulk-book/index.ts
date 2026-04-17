@@ -1,1 +1,1 @@
-export { handleBulkBook } from "./routes.js";
+export { handleBulkBook } from "./routes";

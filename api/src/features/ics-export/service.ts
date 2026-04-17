@@ -1,10 +1,7 @@
-import { getCurrentBooking } from "../../integrations/riotinto/index.js";
-import type { BookingWithAccount } from "../../types/index.js";
-import {
-  getDecryptedPassword,
-  getStoredAccount,
-} from "../accounts/repository.js";
-import { listAccounts } from "../accounts/service.js";
+import { getCurrentBooking } from "../../integrations/riotinto/index";
+import type { BookingWithAccount } from "../../types/index";
+import { getDecryptedPassword, getStoredAccount } from "../accounts/repository";
+import { listAccounts } from "../accounts/service";
 
 export async function fetchAllBookings(
   userId: string,

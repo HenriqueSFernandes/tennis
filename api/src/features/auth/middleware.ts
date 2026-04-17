@@ -1,5 +1,5 @@
 import type { Context, Next } from "hono";
-import { auth } from "../../utils/auth.js";
+import { auth } from "../../utils/auth";
 
 export async function authMiddleware(c: Context, next: Next) {
   // Better Auth handles session validation automatically

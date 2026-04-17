@@ -3,7 +3,7 @@
  * Uses ENCRYPTION_KEY from environment for key derivation.
  */
 
-import { ENCRYPTION_KEY } from "../config/index.js";
+import { ENCRYPTION_KEY } from "../config/index";
 
 const PBKDF2_ITERATIONS = 200_000;
 const KEY_LENGTH = 256;

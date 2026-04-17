@@ -3,29 +3,29 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import "dotenv/config";
 
-import { PORT } from "./config/index.js";
+import { PORT } from "./config/index";
 import {
   handleAddAccount,
   handleDeleteAccount,
   handleListAccounts,
   handleUpdateAccount,
-} from "./features/accounts/routes.js";
-import { authMiddleware } from "./features/auth/middleware.js";
+} from "./features/accounts/routes";
+import { authMiddleware } from "./features/auth/middleware";
 import {
   handleBook,
   handleCancel,
   handleGetBookings,
-} from "./features/bookings/routes.js";
-import { handleBulkBook } from "./features/bulk-book/routes.js";
+} from "./features/bookings/routes";
+import { handleBulkBook } from "./features/bulk-book/routes";
 import {
   handleAddFavorite,
   handleDeleteFavorite,
   handleListFavorites,
   handleUpdateFavorite,
-} from "./features/favorites/routes.js";
-import { handleExportBookings } from "./features/ics-export/routes.js";
-import { handleGetSchedule } from "./features/schedule/routes.js";
-import { auth } from "./utils/auth.js";
+} from "./features/favorites/routes";
+import { handleExportBookings } from "./features/ics-export/routes";
+import { handleGetSchedule } from "./features/schedule/routes";
+import { auth } from "./utils/auth";
 
 // ── App setup ────────────────────────────────────────────────────────────────
 

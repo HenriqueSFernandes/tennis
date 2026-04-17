@@ -1,5 +1,5 @@
-import type { CachedSession } from "../types/index.js";
-import { prisma } from "../utils/prisma.js";
+import type { CachedSession } from "../types/index";
+import { prisma } from "../utils/prisma";
 
 const SESSION_TTL_MS = 90 * 60 * 1000;
 

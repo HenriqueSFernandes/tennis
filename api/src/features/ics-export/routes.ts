@@ -1,7 +1,7 @@
 import type { Context } from "hono";
-import { generateIcsContent } from "../../utils/ics.js";
-import { getUserIdFromContext } from "../auth/middleware.js";
-import { fetchAllBookings } from "./service.js";
+import { generateIcsContent } from "../../utils/ics";
+import { getUserIdFromContext } from "../auth/middleware";
+import { fetchAllBookings } from "./service";
 
 export async function handleExportBookings(c: Context) {
   const userId = getUserIdFromContext(c);
