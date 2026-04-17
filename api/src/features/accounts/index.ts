@@ -1,6 +1,5 @@
 export {
   clearSession,
-  db,
   getCachedSession,
   getDecryptedPassword,
   getSiteUserId,
