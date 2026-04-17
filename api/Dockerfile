@@ -18,12 +18,10 @@ FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
-# Only copy production dependencies
 COPY package.json ./
 RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/generated ./generated
 
 VOLUME ["/data"]
 
