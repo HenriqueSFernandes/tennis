@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { verifyCredentials } from "../../integrations/riotinto/client.js";
 import type {
   AddAccountRequest,
   UpdateAccountRequest,
@@ -41,9 +42,21 @@ export async function handleAddAccount(c: Context) {
       return c.json({ error: "Phone must be exactly 9 digits" }, 400);
     }
 
+    const valid = await verifyCredentials(username, password);
+    if (!valid) {
+      return c.json({ error: "Credenciais riotinto inválidas" }, 400);
+    }
+
     const account = await createAccount(userId, body);
     return c.json(account, 201);
   } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      (err as { code?: string }).code === "P2002"
+    ) {
+      return c.json({ error: "Esta conta já está adicionada" }, 409);
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     return c.json({ error: `Account error: ${message}` }, 500);
   }

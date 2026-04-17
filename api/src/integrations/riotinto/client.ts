@@ -140,7 +140,21 @@ async function login(
   return { cookies, csrfToken: bookingCsrf, userId, cachedAt: Date.now() };
 }
 
-// ── Session management ────────────────────────────────────────────────────────
+// ── Credential verification ──────────────────────────────────────────────────
+
+export async function verifyCredentials(
+  username: string,
+  password: string,
+): Promise<boolean> {
+  try {
+    await login(username, password);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Session management ──────────────────────────────────────────────────────
 
 export async function getSession(
   accountId: string,

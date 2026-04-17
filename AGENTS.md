@@ -6,8 +6,10 @@ This file provides guidance for agentic coding tools working in this repository.
 
 `rio-tinto` is a self-hosted tennis court booking assistant for `riotinto.pt`. It is an npm monorepo with two workspaces:
 
-- **`api/`** — Node.js 22 REST API built with [Hono](https://hono.dev/) v4, using SQLite (`better-sqlite3`) for storage and `tsx` for development
+- **`api/`** — Node.js 22 REST API built with [Hono](https://hono.dev/) v4, using Prisma (PostgreSQL) for storage and `tsx` for development
 - **`frontend/`** — React 18 SPA built with Vite 5, styled with Tailwind CSS v3, using React Router v6
+
+The app allows users to link multiple riotinto.pt accounts to one account and manage their bookings, including viewing schedules, booking slots, favoriting slots, and bulk booking.
 
 ## Build, Dev, and Type-Check Commands
 
@@ -25,9 +27,6 @@ npm run build --workspace=frontend  # Build frontend only (tsc --noEmit + vite b
 
 # Type-check only (no emit) — run from frontend/
 tsc --noEmit
-
-# Production start (API, after build)
-node dist/index.js        # Run from api/
 ```
 
 ### Docker / Infrastructure
@@ -58,15 +57,19 @@ npm run format:check --workspace=frontend
 
 CI runs `format:check` on pull requests (see `.github/workflows/lint.yml`).
 
-**Disabled rules** (intentional, not bugs):
+### Disabled Biome Rules (Intentional)
+
+**api/**
+- `useLiteralKeys` — bracket notation required for `noUncheckedIndexedAccess`
+- `noNonNullAssertion` — `!` assertions used where value is guaranteed
+
+**frontend/**
 - `noUnknownAtRules` — Tailwind `@tailwind` directives
-- `useLiteralKeys` (api only) — bracket notation required for `noUncheckedIndexedAccess`
-- `noNonNullAssertion` (api only) — `!` assertions used where value is guaranteed
 - `noSvgWithoutTitle`, `useButtonType`, `noLabelWithoutControl`, `noAutofocus` — a11y rules need manual fixing
 - `noStaticElementInteractions`, `useKeyWithClickEvents` — modal backdrop divs
-- `useExhaustiveDependencies` (frontend only) — local function dependencies pattern
+- `useExhaustiveDependencies` — local function dependencies pattern
 
-Validation via TypeScript compiler:
+### TypeScript Validation
 
 ```bash
 # From api/:
@@ -75,6 +78,26 @@ npx tsc --noEmit
 # From frontend/:
 npx tsc --noEmit
 ```
+
+## Database (Prisma + PostgreSQL)
+
+The API uses **Prisma** with **PostgreSQL**. The Prisma client is generated in `api/generated/prisma/`.
+
+```bash
+# Generate Prisma client (after schema changes)
+cd api && prisma generate
+
+# Run migrations (development)
+cd api && prisma migrate dev
+
+# Apply migrations (production)
+cd api && prisma migrate deploy
+
+# Open Prisma Studio (database browser)
+cd api && prisma studio
+```
+
+The Prisma schema is at `api/prisma/schema.prisma`. Models use `snake_case` in the database and map to `camelCase` TypeScript fields.
 
 ## TypeScript Configuration
 
@@ -97,8 +120,8 @@ Both workspaces use strict TypeScript. Key settings:
 - Use `import type { ... }` for type-only imports — always, without exception
 - In `api/`, all local imports **must** include the `.js` extension (NodeNext requirement):
   ```ts
-  import { openDb } from './db.js';
-  import type { StoredAccount } from './types.js';
+  import { prisma } from '../utils/prisma.js';
+  import type { User } from '../types/index.js';
   ```
 - In `frontend/`, no extension on local imports (bundler resolution):
   ```ts
@@ -155,11 +178,11 @@ Use section comment banners to divide long files into logical sections:
 
 - **API routes (Hono):** Return explicit error JSON with status codes — `c.json({ error: 'message' }, 400)`. No centralized error middleware; each handler manages its own errors
 - **Frontend async handlers:** Wrap in `try/catch`; set error state from caught `Error` message; always have a `finally` block to reset loading state
-- **`ApiError`:** Use the existing `ApiError` class in `frontend/src/api.ts` when adding new API call wrappers — it extends `Error` with a `status: number` field
+- **`ApiError`:** Use the existing `ApiError` class in `frontend/src/core/api.ts` when adding new API call wrappers — it extends `Error` with a `status: number` field
 - **Intentional empty catches:** Acceptable when swallowing known non-critical errors (e.g., JSON parse failures on error responses); add a comment explaining intent
 - **Concurrent requests:** Use `Promise.all` for parallel independent fetches; use `Promise.allSettled` when partial failure is acceptable
 
-### API Layer (`frontend/src/api.ts`)
+### API Layer (`frontend/src/core/api.ts`)
 
 All frontend API calls must go through the `request<T>(path, options)` generic helper, which handles the `Authorization` header and `ApiError` throwing. Add new endpoints as thin wrappers:
 
@@ -172,23 +195,23 @@ export async function myEndpoint(params: MyParams): Promise<MyResult> {
 }
 ```
 
-### Database (`api/src/db.ts`)
+### Prisma Client (`api/src/utils/prisma.ts`)
 
-- All DB access is synchronous (`better-sqlite3`)
-- The `Db` type alias (`type Db = InstanceType<typeof Database>`) is used as the parameter type for every function — the DB instance is injected, never imported as a global
-- Use SQL `INSERT ... ON CONFLICT(...) DO UPDATE SET ...` (UPSERT) for idempotent writes
-- SQL column names use `snake_case`; map to `camelCase` TypeScript fields in the return type
+Import the `prisma` client from `utils/prisma.js` for all database access. It uses the `PrismaPg` adapter for PostgreSQL.
 
-### Maps and Lookups
+```ts
+import { prisma } from '../utils/prisma.js';
 
-- Prefer `Map` over plain objects for runtime O(1) lookups
-- Use composite string keys (`"YYYY-MM-DD-turno-hora"`, `"dayIndex-time"`) to index multi-dimensional slot data
+// Example usage
+const user = await prisma.user.findUnique({ where: { id: userId } });
+```
 
 ## Environment Variables
 
 | Variable | Used by | Purpose |
 |---|---|---|
 | `APP_PASSWORD` | `api/` | Plaintext password for auth; stored hashed in DB |
+| `DATABASE_URL` | `api/` | PostgreSQL connection string |
 | `VITE_API_URL` | `frontend/` | API base URL injected at Vite build time |
 
 Set these in `.env` locally (not committed) or via Docker Compose `environment:` / `build.args:`.
