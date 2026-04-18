@@ -276,7 +276,7 @@ export function CourtGrid({
       {/* Legend */}
       <div className="px-4 py-3 border-t border-slate-700/50 bg-slate-800/30">
         <div className="flex flex-wrap gap-4 text-xs">
-          <LegendItem color="bg-emerald-600" label="A sua reserva" />
+          <LegendItem color="bg-emerald-600" label="A tua reserva" />
           <LegendItem
             color="bg-rose-500/20"
             dotColor="bg-rose-400/60"
@@ -301,7 +301,7 @@ export function CourtGrid({
   ): string {
     if (!slot || past) return "";
     if (slot.isOurs) {
-      return `Sua reserva (${getAccountName(slot.ourAccountId ?? "")}) - Clique para cancelar`;
+      return `Reservado por ${getAccountName(slot.ourAccountId ?? "")} - Clique para cancelar`;
     }
     if (slot.bookedBy) {
       return `Reservado por ${slot.bookedByName ?? slot.bookedBy}`;

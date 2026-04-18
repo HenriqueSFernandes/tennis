@@ -1,5 +1,5 @@
-import sharp from 'sharp';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import sharp from "sharp";
 
 const sizes = [192, 512];
 
@@ -16,12 +16,10 @@ const svgTemplate = (size) => `
 </svg>
 `;
 
-mkdirSync('public', { recursive: true });
+mkdirSync("public", { recursive: true });
 
 for (const size of sizes) {
   const svg = Buffer.from(svgTemplate(size));
-  await sharp(svg)
-    .png()
-    .toFile(`public/pwa-${size}x${size}.png`);
+  await sharp(svg).png().toFile(`public/pwa-${size}x${size}.png`);
   console.log(`Created pwa-${size}x${size}.png`);
 }

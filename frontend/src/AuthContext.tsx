@@ -36,15 +36,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Log user state changes
+  useEffect(() => {
+    console.log(
+      "[Auth] user state changed:",
+      user,
+      "isAuthenticated:",
+      user !== null,
+    );
+  }, [user]);
+
   // Check session on mount
   useEffect(() => {
     const checkSession = async () => {
+      console.log("[Auth] checkSession started, current user:", user);
       try {
         const { data } = await authClient.getSession();
-        setUser(data?.user as User | null);
-      } catch {
+        console.log(
+          "[Auth] getSession returned:",
+          data,
+          "| Setting user to:",
+          data?.user ?? null,
+        );
+        setUser((data?.user as User | null) ?? null);
+      } catch (err) {
+        console.log("[Auth] getSession error:", err, "| Setting user to: null");
         setUser(null);
       } finally {
+        console.log("[Auth] Setting isLoading to false");
         setIsLoading(false);
       }
     };
@@ -65,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Refresh user session
         const { data } = await authClient.getSession();
-        setUser(data?.user as User | null);
+        setUser((data?.user as User | null) ?? null);
         return {};
       } catch (error) {
         return {
@@ -95,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Refresh user session
         const { data } = await authClient.getSession();
-        setUser(data?.user as User | null);
+        setUser((data?.user as User | null) ?? null);
         return {};
       } catch (error) {
         return {
@@ -135,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const { data } = await authClient.getSession();
-      setUser(data?.user as User | null);
+      setUser((data?.user as User | null) ?? null);
     } catch {
       setUser(null);
     }
@@ -143,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = {
     user,
-    isAuthenticated: user !== null,
+    isAuthenticated: !!user,
     isLoading,
     signIn,
     signUp,

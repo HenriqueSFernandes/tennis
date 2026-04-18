@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
-import { getAccounts } from "./api";
 import { Layout } from "./components/Layout";
 import { DataCacheProvider } from "./DataCacheContext";
 import { Accounts } from "./pages/Accounts";
@@ -15,6 +13,12 @@ const DEFAULT_VIEW_KEY = "rio-tinto-default-view";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  console.log(
+    "[ProtectedRoute] Rendering, isLoading:",
+    isLoading,
+    "isAuthenticated:",
+    isAuthenticated,
+  );
 
   if (isLoading) {
     return (
@@ -50,6 +54,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  console.log(
+    "[AuthRedirect] Rendering, isLoading:",
+    isLoading,
+    "isAuthenticated:",
+    isAuthenticated,
+  );
 
   if (isLoading) {
     return (
@@ -85,30 +95,14 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
 
 function DefaultRedirect() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [checking, setChecking] = useState(false);
+  console.log(
+    "[DefaultRedirect] Rendering, isLoading:",
+    isLoading,
+    "isAuthenticated:",
+    isAuthenticated,
+  );
 
-  useEffect(() => {
-    if (!isAuthenticated || checking) return;
-
-    const checkAccounts = async () => {
-      setChecking(true);
-      try {
-        const accounts = await getAccounts();
-        if (accounts.length === 0) {
-          window.location.replace("/accounts");
-          return;
-        }
-      } catch {
-        window.location.replace("/accounts");
-        return;
-      }
-      setChecking(false);
-    };
-
-    checkAccounts();
-  }, [isAuthenticated, checking]);
-
-  if (isLoading || checking) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="flex items-center gap-3 text-slate-400">
