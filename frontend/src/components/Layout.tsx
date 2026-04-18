@@ -1,18 +1,28 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 
 export function Layout() {
   const { signOut, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
-    { path: "/", label: "Dashboard", icon: HomeIcon },
+    { path: "/dashboard", label: "Dashboard", icon: HomeIcon },
     { path: "/schedule", label: "Campos", icon: CalendarIcon },
     { path: "/accounts", label: "Contas", icon: UsersIcon },
+    { path: "/profile", label: "Perfil", icon: UserIcon },
   ];
 
   const handleLogout = async () => {
     await signOut();
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+
+  const handleLogoClick = () => {
+    navigate("/");
   };
 
   // Get user initials for avatar
@@ -31,28 +41,38 @@ export function Layout() {
       <header className="glass sticky top-0 z-40 border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <span className="text-xl">🎾</span>
-            </div>
-            <div>
-              <h1 className="text-white font-semibold text-sm leading-tight">
-                Rio Tinto Tennis
-              </h1>
-              <p className="text-slate-500 text-xs">Court Booking Assistant</p>
-            </div>
+            <button
+              onClick={handleLogoClick}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <span className="text-xl">🎾</span>
+              </div>
+              <div>
+                <h1 className="text-white font-semibold text-sm leading-tight">
+                  Rio Tinto Tennis
+                </h1>
+                <p className="text-slate-500 text-xs">
+                  Court Booking Assistant
+                </p>
+              </div>
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* User avatar */}
+            {/* User avatar - clickable to profile */}
             {user && (
-              <div className="flex items-center gap-2">
+              <button
+                onClick={handleProfileClick}
+                className="flex items-center gap-2 hover:bg-slate-800/50 transition-colors duration-200 rounded-lg px-2 py-1 -mr-2"
+              >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg shadow-emerald-900/20">
                   {getInitials(user.name)}
                 </div>
                 <span className="hidden sm:block text-slate-300 text-sm">
                   {user.name}
                 </span>
-              </div>
+              </button>
             )}
 
             <button
@@ -177,6 +197,24 @@ function LogoutIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      />
+    </svg>
+  );
+}
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
       />
     </svg>
   );

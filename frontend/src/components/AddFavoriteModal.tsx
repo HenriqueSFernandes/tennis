@@ -78,8 +78,8 @@ export function AddFavoriteModal({
       <div className="relative bg-slate-800 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-sm p-6 space-y-5 scale-in border border-slate-700/50">
         {/* Header */}
         <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
-            <StarIcon className="w-7 h-7 text-amber-400" filled />
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+            <StarIcon className="w-7 h-7 text-emerald-400" filled />
           </div>
           <h2 className="text-white text-xl font-bold">
             Adicionar aos favoritos
@@ -104,7 +104,7 @@ export function AddFavoriteModal({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400 text-sm">Hora</span>
-            <span className="text-amber-400 font-semibold text-lg">
+            <span className="text-emerald-400 font-semibold text-lg">
               {slot.time}
             </span>
           </div>
@@ -123,14 +123,14 @@ export function AddFavoriteModal({
                   onClick={() => setSelectedAccount(acc.id)}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left ${
                     selectedAccount === acc.id
-                      ? "bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500/30"
+                      ? "bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/30"
                       : "bg-slate-900/50 border-slate-700/50 hover:border-slate-600"
                   }`}
                 >
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 ${
                       selectedAccount === acc.id
-                        ? "bg-amber-600"
+                        ? "bg-emerald-600"
                         : "bg-slate-700"
                     }`}
                   >
@@ -151,17 +151,17 @@ export function AddFavoriteModal({
                     </p>
                   </div>
                   {selectedAccount === acc.id && (
-                    <CheckIcon className="w-5 h-5 text-amber-400 shrink-0" />
+                    <CheckIcon className="w-5 h-5 text-emerald-400 shrink-0" />
                   )}
                 </button>
               ))}
             </div>
           </div>
         ) : accounts.length === 1 ? (
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
             <p className="text-slate-400 text-sm mb-1">Adicionar à conta</p>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
                 {accounts[0]?.displayName.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -196,7 +196,7 @@ export function AddFavoriteModal({
           <button
             onClick={handleConfirm}
             disabled={loading || !selectedAccount}
-            className="flex-1 bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-3 font-medium transition-all duration-200 btn-press disabled:opacity-50 shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-medium transition-all duration-200 btn-press disabled:opacity-50 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Favorite, FavoriteWithAvailability } from "../types";
+import { ArrowRightIcon } from "./ui";
 
 const DAY_NAMES = [
   "Segunda",
@@ -67,17 +68,18 @@ export function FavoritesSection({
     <section className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <StarIcon className="w-4 h-4 text-amber-400" filled />
+          <StarIcon className="w-4 h-4 text-slate-500" />
           <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
             Favoritos
           </h2>
         </div>
         <button
           onClick={onOpenBulkBook}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-medium rounded-lg transition-colors"
+          type="button"
+          className="group flex items-center gap-1.5 text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
         >
-          <CalendarIcon className="w-3.5 h-3.5" />
           Reservar em massa
+          <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
         </button>
       </div>
 
@@ -111,13 +113,13 @@ export function FavoritesSection({
                       }}
                       onBlur={() => saveEditing(fav)}
                       className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-emerald-500"
-                      autoFocus
                     />
                   ) : (
                     <button
                       onClick={() => startEditing(fav)}
-                      className="text-white text-sm font-medium truncate hover:text-amber-400 transition-colors text-left"
+                      className="text-white text-sm font-medium truncate hover:text-emerald-400 transition-colors text-left"
                       title="Clicar para editar nome"
+                      type="button"
                     >
                       {displayName}
                     </button>
@@ -130,6 +132,7 @@ export function FavoritesSection({
                   onClick={() => onDeleteFavorite(fav.id)}
                   className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-700 rounded-lg transition-colors shrink-0"
                   title="Remover dos favoritos"
+                  type="button"
                 >
                   <TrashIcon className="w-4 h-4" />
                 </button>
@@ -192,7 +195,8 @@ export function FavoritesSection({
                 {fav.thisWeek.isAvailable && !fav.thisWeek.isPast && (
                   <button
                     onClick={() => onBookFavorite(fav, 0)}
-                    className="w-full py-2 rounded-lg text-sm font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-all duration-200"
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all duration-200"
+                    type="button"
                   >
                     Reservar esta semana
                   </button>
@@ -200,7 +204,8 @@ export function FavoritesSection({
                 {fav.nextWeek.isAvailable && !fav.nextWeek.isPast && (
                   <button
                     onClick={() => onBookFavorite(fav, 1)}
-                    className="w-full py-2 rounded-lg text-sm font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-all duration-200"
+                    className="w-full py-2 rounded-lg text-sm font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all duration-200"
+                    type="button"
                   >
                     Reservar próxima semana
                   </button>
@@ -209,6 +214,7 @@ export function FavoritesSection({
                   <button
                     disabled
                     className="w-full py-2 rounded-lg text-sm font-medium bg-slate-700 text-slate-500 cursor-not-allowed"
+                    type="button"
                   >
                     Indisponível
                   </button>
@@ -236,6 +242,7 @@ function StarIcon({
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Start Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -254,6 +261,7 @@ function TrashIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Trash Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -272,6 +280,7 @@ function CheckIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Check Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -290,6 +299,7 @@ function AlertIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Alert Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -308,29 +318,12 @@ function ClockIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Clock Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={2}
         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function CalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
     </svg>
   );
