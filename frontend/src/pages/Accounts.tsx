@@ -312,13 +312,9 @@ export function Accounts() {
         <div className="flex items-start gap-3 text-slate-400 text-xs">
           <ShieldIcon className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500/60" />
           <p>
-            As palavras-passe são cifradas com AES-256-GCM antes de serem
+            As palavras-passe são encritadas com AES-256-GCM antes de serem
             guardadas.
           </p>
-        </div>
-        <div className="flex items-start gap-3 text-slate-400 text-xs">
-          <InfoIcon className="w-4 h-4 shrink-0 mt-0.5 text-slate-500" />
-          <p>Cada conta pode ter no máximo 1 reserva ativa por dia.</p>
         </div>
       </div>
 

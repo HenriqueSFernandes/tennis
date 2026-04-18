@@ -5,6 +5,7 @@ import { DataCacheProvider } from "./DataCacheContext";
 import { Accounts } from "./pages/Accounts";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
+import { Profile } from "./pages/Profile";
 import { Schedule } from "./pages/Schedule";
 import { Signup } from "./pages/Signup";
 
@@ -111,6 +112,7 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="schedule" element={<Schedule />} />
         <Route path="accounts" element={<Accounts />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       {/* Redirect unknown routes to login */}
