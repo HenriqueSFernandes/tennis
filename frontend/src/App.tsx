@@ -13,12 +13,6 @@ const DEFAULT_VIEW_KEY = "rio-tinto-default-view";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  console.log(
-    "[ProtectedRoute] Rendering, isLoading:",
-    isLoading,
-    "isAuthenticated:",
-    isAuthenticated,
-  );
 
   if (isLoading) {
     return (
@@ -54,12 +48,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  console.log(
-    "[AuthRedirect] Rendering, isLoading:",
-    isLoading,
-    "isAuthenticated:",
-    isAuthenticated,
-  );
 
   if (isLoading) {
     return (
@@ -95,12 +83,6 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
 
 function DefaultRedirect() {
   const { isAuthenticated, isLoading } = useAuth();
-  console.log(
-    "[DefaultRedirect] Rendering, isLoading:",
-    isLoading,
-    "isAuthenticated:",
-    isAuthenticated,
-  );
 
   if (isLoading) {
     return (
