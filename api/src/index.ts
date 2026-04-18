@@ -46,7 +46,13 @@ app.use(
         return origin;
       return null;
     },
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-request-id",
+      "x-correlation-id",
+      "x-idempotency-key",
+    ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
     maxAge: 86400,
