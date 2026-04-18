@@ -75,14 +75,14 @@ export function BookingModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-xs"
         onClick={!loading ? onCancel : undefined}
       />
 
       <div className="relative bg-slate-800 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-sm p-6 space-y-5 scale-in border border-slate-700/50">
         {/* Header */}
         <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-600/20 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+          <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-emerald-500/20 to-teal-600/20 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
             <CalendarIcon className="w-7 h-7 text-emerald-400" />
           </div>
           <h2 className="text-white text-xl font-bold">Reservar campo</h2>
@@ -273,7 +273,7 @@ export function CancelModal({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-xs"
         onClick={!loading ? onCancel : undefined}
       />
 

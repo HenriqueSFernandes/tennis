@@ -1,13 +1,89 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* ── Base & Design Tokens ────────────────────────────────────────── */
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
 
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility card-hover {
+  /* Card hover lift effect */
+  @apply transition-all duration-300 ease-out;
+  &:hover {
+    @apply -translate-y-0.5 shadow-xl shadow-black/20;
+  }
+}
+
+@utility btn-press {
+  /* Button press effect */
+  @apply active:scale-95 transition-transform duration-100;
+}
+
+@utility shimmer {
+  /* Shimmer loading animation */
+  @apply animate-pulse bg-linear-to-r from-slate-800 via-slate-700 to-slate-800;
+  background-size: 200% 100%;
+}
+
+@utility glass {
+  /* Glass effect */
+  @apply bg-slate-800/80 backdrop-blur-xl border border-slate-700/50;
+}
+
+@utility text-gradient {
+  /* Text gradient */
+  @apply bg-linear-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
+}
+
+@utility focus-ring {
+  /* Focus ring utility */
+  @apply focus:outline-hidden focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-slate-900;
+}
+
+@utility fade-in {
+  /* Fade in animation */
+  animation: fadeIn 0.3s ease-out;
+}
+
+@utility scale-in {
+  /* Scale in animation for modals */
+  animation: scaleIn 0.2s ease-out;
+}
+
+@utility slide-up {
+  /* Slide up animation */
+  animation: slideUp 0.3s ease-out;
+}
+
+@utility glow-emerald {
+  /* Glow effects */
+  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.4);
+}
+
+@utility glow-rose {
+  box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.4);
+}
+
+@layer utilities {
+  /* ── Base & Design Tokens ────────────────────────────────────────── */
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 @layer base {
@@ -18,73 +94,37 @@ html {
 
   /* Improved focus ring for accessibility */
   :focus-visible {
-    @apply outline-none ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-900;
+    @apply outline-hidden ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-900;
   }
 }
-
-/* ── Custom Scrollbar ───────────────────────────────────────────── */
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* ── Utility Classes ────────────────────────────────────────────── */
 
 @layer utilities {
-  /* Card hover lift effect */
-  .card-hover {
-    @apply transition-all duration-300 ease-out;
-  }
-  .card-hover:hover {
-    @apply -translate-y-0.5 shadow-xl shadow-black/20;
+  /* ── Custom Scrollbar ───────────────────────────────────────────── */
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
 
-  /* Button press effect */
-  .btn-press {
-    @apply active:scale-95 transition-transform duration-100;
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  /* Shimmer loading animation */
-  .shimmer {
-    @apply animate-pulse bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800;
-    background-size: 200% 100%;
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 
-  /* Glass effect */
-  .glass {
-    @apply bg-slate-800/80 backdrop-blur-xl border border-slate-700/50;
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
   }
 
-  /* Text gradient */
-  .text-gradient {
-    @apply bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
-  }
+  /* ── Utility Classes ────────────────────────────────────────────── */
+}
 
-  /* Focus ring utility */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-slate-900;
-  }
-
-  /* Fade in animation */
-  .fade-in {
-    animation: fadeIn 0.3s ease-out;
-  }
+@layer utilities {
 
   @keyframes fadeIn {
     from {
@@ -95,11 +135,6 @@ html {
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* Scale in animation for modals */
-  .scale-in {
-    animation: scaleIn 0.2s ease-out;
   }
 
   @keyframes scaleIn {
@@ -113,11 +148,6 @@ html {
     }
   }
 
-  /* Slide up animation */
-  .slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-
   @keyframes slideUp {
     from {
       opacity: 0;
@@ -127,15 +157,6 @@ html {
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* Glow effects */
-  .glow-emerald {
-    box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.4);
-  }
-
-  .glow-rose {
-    box-shadow: 0 0 20px -5px rgba(244, 63, 94, 0.4);
   }
 }
 

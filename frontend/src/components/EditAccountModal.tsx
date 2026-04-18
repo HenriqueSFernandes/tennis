@@ -86,7 +86,7 @@ export function EditAccountModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-xs"
         onClick={onCancel}
       />
       <div className="relative bg-slate-800 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-sm p-6 scale-in border border-slate-700/50">
@@ -201,7 +201,7 @@ function FormField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           maxLength={maxLength}
-          className={`w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200 ${
+          className={`w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-3 py-2.5 text-sm outline-hidden transition-all duration-200 ${
             icon ? "pl-10" : ""
           } ${
             error

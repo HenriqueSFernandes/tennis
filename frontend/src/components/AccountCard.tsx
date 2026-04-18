@@ -19,7 +19,7 @@ export function AccountCard({
   return (
     <div className="group bg-slate-800 rounded-xl p-4 flex items-center justify-between gap-4 border border-slate-700/50 card-hover">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-emerald-900/20">
+        <div className="w-12 h-12 rounded-xl bg-linear-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-emerald-900/20">
           {account.displayName.charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">

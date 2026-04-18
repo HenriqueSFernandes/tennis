@@ -239,7 +239,7 @@ export function BulkBookModal({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-xs"
         onClick={step !== "processing" ? onClose : undefined}
       />
 
@@ -318,7 +318,7 @@ export function BulkBookModal({
                             checked={isSelected}
                             onChange={() => !isDisabled && toggleSlot(slot)}
                             disabled={isDisabled}
-                            className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-800"
+                            className="mt-1 w-4 h-4 rounded-sm border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-800"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-sm font-medium">
@@ -377,7 +377,7 @@ export function BulkBookModal({
                       type="checkbox"
                       checked={forceCancel}
                       onChange={(e) => setForceCancel(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-800"
+                      className="mt-1 w-4 h-4 rounded-sm border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-800"
                     />
                     <div>
                       <p className="text-slate-300 text-sm font-medium">

@@ -45,7 +45,7 @@ export function Layout() {
               onClick={handleLogoClick}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <span className="text-xl">🎾</span>
               </div>
               <div>
@@ -66,7 +66,7 @@ export function Layout() {
                 onClick={handleProfileClick}
                 className="flex items-center gap-2 hover:bg-slate-800/50 transition-colors duration-200 rounded-lg px-2 py-1 -mr-2"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg shadow-emerald-900/20">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-lg shadow-emerald-900/20">
                   {getInitials(user.name)}
                 </div>
                 <span className="hidden sm:block text-slate-300 text-sm">

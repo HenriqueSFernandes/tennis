@@ -143,7 +143,7 @@ export function Signup() {
         <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700/50 shadow-2xl shadow-black/50">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-900/20">
+            <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-900/20">
               <svg
                 className="w-8 h-8 text-white"
                 fill="none"
@@ -179,7 +179,7 @@ export function Signup() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                   placeholder="O teu nome"
                   required
                 />
@@ -199,7 +199,7 @@ export function Signup() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                   placeholder="tu@email.com"
                   required
                 />
@@ -219,7 +219,7 @@ export function Signup() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-11 py-3 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-11 py-3 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                   placeholder="Mínimo 8 caracteres"
                   required
                   minLength={8}
@@ -251,7 +251,7 @@ export function Signup() {
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                   placeholder="Repete a palavra-passe"
                   required
                 />
