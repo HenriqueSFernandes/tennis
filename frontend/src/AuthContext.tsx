@@ -25,6 +25,7 @@ interface AuthContextValue {
     password: string,
     name: string,
   ) => Promise<{ error?: string }>;
+  signInWithGoogle: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -110,6 +111,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const signInWithGoogle = useCallback(async (): Promise<{
+    error?: string;
+  }> => {
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: `${window.location.origin}/`,
+      });
+
+      if (result.error) {
+        return { error: result.error.message };
+      }
+
+      return {};
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : "Google sign in failed",
+      };
+    }
+  }, []);
+
   const refreshUser = useCallback(async () => {
     try {
       const { data } = await authClient.getSession();
@@ -125,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     refreshUser,
   };

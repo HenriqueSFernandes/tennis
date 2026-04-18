@@ -124,7 +124,14 @@ export function Dashboard() {
       setAccounts(a);
       setFavorites(f);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error ao carregar dados");
+      const msg = e instanceof Error ? e.message : "Erro ao carregar dados";
+      if (msg === "No accounts configured") {
+        setError(
+          "Nenhuma conta configurada. Adiciona uma conta riotinto.pt para começar.",
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
