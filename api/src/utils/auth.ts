@@ -29,4 +29,7 @@ export const auth = betterAuth({
     "https://tennis.henriquesf.me",
     "https://api.tennis.henriquesf.me",
   ],
+  experimental: {
+    joins: true,
+  },
 });

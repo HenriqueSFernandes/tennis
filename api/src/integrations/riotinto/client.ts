@@ -85,7 +85,7 @@ async function login(
   let cookies = extractCookies(getResp.headers);
 
   const csrfMatch = html.match(/"csrf\.token"\s*:\s*"([a-f0-9]+)"/);
-  if (!csrfMatch || !csrfMatch[1]) {
+  if (!csrfMatch?.[1]) {
     throw new Error("Could not extract CSRF token from login page");
   }
   const csrfToken = csrfMatch[1];
