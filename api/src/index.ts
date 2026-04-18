@@ -38,10 +38,9 @@ app.use(
       if (!origin) return "*";
       if (
         origin === "https://tennis.henriquesf.me" ||
-        origin === "https://riotinto.henriquesf.me"
+        origin === "https://api.tennis.henriquesf.me"
       )
         return origin;
-      if (origin.includes(".rio-tinto-frontend.pages.dev")) return origin;
       if (origin.includes("localhost") || origin.startsWith("http://127.0.0.1"))
         return origin;
       return null;
