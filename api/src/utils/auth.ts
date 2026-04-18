@@ -1,3 +1,4 @@
+import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
@@ -21,6 +22,7 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
+  plugins: [dash()],
   trustedOrigins: [
     "http://localhost:5173",
     "http://localhost:3000",

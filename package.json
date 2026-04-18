@@ -5,6 +5,10 @@
     "api",
     "frontend"
   ],
+  "overrides": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
   "scripts": {
     "dev:api": "npm run dev --workspace=api",
     "dev:frontend": "npm run dev --workspace=frontend",
