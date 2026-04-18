@@ -217,7 +217,7 @@ function UserIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
-      <title>User Icons</title>
+      <title>User Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
