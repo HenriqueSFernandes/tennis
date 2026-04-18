@@ -280,7 +280,7 @@ export function BulkBookModal({
                     onClick={() => setWeekFilter(tab.value)}
                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                       weekFilter === tab.value
-                        ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                         : "bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:bg-slate-700"
                     }`}
                   >
@@ -306,7 +306,7 @@ export function BulkBookModal({
                         key={key}
                         className={`p-3 rounded-xl border transition-all ${
                           isSelected
-                            ? "bg-amber-500/10 border-amber-500/30"
+                            ? "bg-emerald-500/10 border-emerald-500/30"
                             : isDisabled
                               ? "bg-slate-900/50 border-slate-700/30 opacity-50"
                               : "bg-slate-900/50 border-slate-700/50 hover:border-slate-600"
@@ -318,7 +318,7 @@ export function BulkBookModal({
                             checked={isSelected}
                             onChange={() => !isDisabled && toggleSlot(slot)}
                             disabled={isDisabled}
-                            className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-800"
+                            className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-800"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-sm font-medium">
@@ -328,7 +328,7 @@ export function BulkBookModal({
                               {getSlotLabel(slot)}
                             </p>
                             {slot.isConflict && (
-                              <p className="text-amber-400 text-xs mt-1 flex items-center gap-1">
+                              <p className="text-emerald-400 text-xs mt-1 flex items-center gap-1">
                                 <AlertIcon className="w-3 h-3" />
                                 {slot.conflictReason}
                               </p>
@@ -371,19 +371,19 @@ export function BulkBookModal({
             <div className="p-6 space-y-4">
               {/* Force Cancel Toggle */}
               {conflictingSlots.length > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                <div className="bg-slate-700/50 border border-slate-600/50 rounded-xl p-4">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={forceCancel}
                       onChange={(e) => setForceCancel(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-800"
+                      className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-800"
                     />
                     <div>
-                      <p className="text-amber-300 text-sm font-medium">
+                      <p className="text-slate-300 text-sm font-medium">
                         Cancelar reservas existentes
                       </p>
-                      <p className="text-amber-400/70 text-xs mt-1">
+                      <p className="text-slate-500/70 text-xs mt-1">
                         {conflictingSlots.length} slot(s) já estão reservados.
                         Ative para cancelar e re-reservar.
                       </p>
@@ -410,7 +410,7 @@ export function BulkBookModal({
                             className={`p-3 rounded-lg border flex items-center justify-between ${
                               isConflict
                                 ? forceCancel
-                                  ? "bg-amber-500/10 border-amber-500/30"
+                                  ? "bg-slate-700/50 border-slate-600/50"
                                   : "bg-slate-900/50 border-slate-700/30"
                                 : "bg-slate-900/50 border-slate-700/50"
                             }`}
@@ -429,7 +429,7 @@ export function BulkBookModal({
                                 <p
                                   className={`text-xs mt-0.5 ${
                                     forceCancel
-                                      ? "text-amber-400"
+                                      ? "text-slate-400"
                                       : "text-slate-500"
                                   }`}
                                 >
@@ -463,7 +463,7 @@ export function BulkBookModal({
           {step === "processing" && (
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
               </div>
               <p className="text-slate-400 text-center">
                 A processar {selectedSlots.length} reserva(s)...
@@ -489,10 +489,10 @@ export function BulkBookModal({
                     <div className="text-xs text-slate-500">Com sucesso</div>
                   </div>
                   <div className="text-center">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-2">
-                      <AlertIcon className="w-6 h-6 text-amber-400" />
+                    <div className="w-12 h-12 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center mx-auto mb-2">
+                      <AlertIcon className="w-6 h-6 text-slate-400" />
                     </div>
-                    <div className="text-2xl font-bold text-amber-400">
+                    <div className="text-2xl font-bold text-slate-400">
                       {result.skipped.length}
                     </div>
                     <div className="text-xs text-slate-500">Ignoradas</div>
@@ -561,7 +561,7 @@ export function BulkBookModal({
               {/* Skipped Section */}
               {result.skipped.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-amber-400 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="text-slate-400 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
                     <AlertIcon className="w-4 h-4" />
                     Não reservados
                   </h3>
@@ -591,20 +591,20 @@ export function BulkBookModal({
                       return (
                         <div
                           key={`${s.date}-${s.courtId}-${s.accountId}-${s.reason}`}
-                          className="bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 transition-all duration-200 flex items-center gap-3"
+                          className="bg-slate-700/5 hover:bg-slate-700/10 border border-slate-600/30 rounded-xl p-3 transition-all duration-200 flex items-center gap-3"
                         >
-                          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                            <AlertIcon className="w-5 h-5 text-amber-400" />
+                          <div className="w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center shrink-0">
+                            <AlertIcon className="w-5 h-5 text-slate-400" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-white text-sm font-medium truncate">
                               {label}
                             </div>
-                            <div className="text-amber-400/70 text-xs">
+                            <div className="text-slate-400/70 text-xs">
                               {accountName}
                             </div>
                           </div>
-                          <span className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium shrink-0">
+                          <span className="px-2 py-1 rounded-full bg-slate-700/50 text-slate-400 text-xs font-medium shrink-0">
                             {reasonText}
                           </span>
                         </div>
@@ -677,7 +677,7 @@ export function BulkBookModal({
               <button
                 onClick={handleContinue}
                 disabled={selectedSlots.length === 0}
-                className="flex-1 bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 font-medium transition-colors"
               >
                 Continuar
               </button>
@@ -698,7 +698,7 @@ export function BulkBookModal({
                   selectedSlots.length === 0 ||
                   (conflictingSlots.length > 0 && !forceCancel)
                 }
-                className="flex-1 bg-amber-600 hover:bg-amber-500 text-white rounded-xl py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirmar {selectedSlots.length}
               </button>

@@ -12,7 +12,6 @@ import {
   ErrorAlert,
   EyeIcon,
   EyeOffIcon,
-  InfoIcon,
   LockIcon,
   PhoneIcon,
   PlusIcon,
@@ -67,20 +66,20 @@ export function Accounts() {
       {
         field: "displayName",
         validate: (v) =>
-          v.length < 2 ? "Nome deve ter pelo menos 2 caracteres" : undefined,
+          v.length < 2 ? "Gnome deve ter pelo menos 2 characters" : undefined,
       },
       {
         field: "username",
         validate: (v) =>
           v.length < 3
-            ? "Username deve ter pelo menos 3 caracteres"
+            ? "Username deve ter pelo menos 3 characters"
             : undefined,
       },
       {
         field: "password",
         validate: (v) =>
           v.length < 4
-            ? "Password deve ter pelo menos 4 caracteres"
+            ? "Password deve ter pelo menos 4 characters"
             : undefined,
       },
       {
@@ -160,6 +159,7 @@ export function Accounts() {
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
+          type="button"
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 btn-press ${
             showForm
               ? "bg-slate-700 hover:bg-slate-600 text-white"
@@ -204,7 +204,7 @@ export function Accounts() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
-              label="Nome de apresentação"
+              label="Gnome de apresentação"
               placeholder="Ex: João Silva"
               value={stringValues.displayName}
               onChange={(v) => handleChange("displayName", v)}
@@ -285,6 +285,7 @@ export function Accounts() {
           description="Adicione as contas riotinto.pt que pretende gerir."
           action={
             <button
+              type="button"
               onClick={() => setShowForm(true)}
               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-all duration-200 btn-press"
             >
