@@ -51,6 +51,7 @@ app.use(
       "x-request-id",
       "x-correlation-id",
       "x-idempotency-key",
+      "x-visitor-id",
     ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
