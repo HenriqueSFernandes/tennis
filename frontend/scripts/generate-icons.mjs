@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { mkdirSync } from "fs";
 import sharp from "sharp";
 
 const sizes = [192, 512];
