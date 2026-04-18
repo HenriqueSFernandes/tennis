@@ -501,7 +501,7 @@ export function Profile() {
       {/* User Info Section */}
       <section className="bg-slate-800 rounded-xl p-5 border border-slate-700/50">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-900/20">
+          <div className="w-16 h-16 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-900/20">
             {getInitials(user.name)}
           </div>
           <div>
@@ -527,7 +527,7 @@ export function Profile() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                 placeholder="O teu nome"
                 autoFocus
               />
@@ -660,7 +660,7 @@ export function Profile() {
                 type={showCurrentPassword ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                 placeholder="••••••••"
               />
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
@@ -689,7 +689,7 @@ export function Profile() {
                 type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
                 placeholder="Mínimo 8 caracteres"
               />
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
@@ -717,7 +717,7 @@ export function Profile() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+              className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
               placeholder="••••••••"
             />
           </div>
@@ -727,7 +727,7 @@ export function Profile() {
               type="checkbox"
               checked={revokeOnPasswordChange}
               onChange={(e) => setRevokeOnPasswordChange(e.target.checked)}
-              className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-emerald-600 focus:ring-emerald-500/50 focus:ring-offset-slate-800"
+              className="w-4 h-4 rounded-sm bg-slate-700 border-slate-600 text-emerald-600 focus:ring-emerald-500/50 focus:ring-offset-slate-800"
             />
             <span className="text-slate-300 text-sm">
               Terminar todas as outras sessões
@@ -921,7 +921,7 @@ export function Profile() {
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-xs"
             onClick={() => {
               setShowDeleteModal(false);
               setDeletePassword("");
@@ -944,7 +944,7 @@ export function Profile() {
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-rose-500/50"
+                className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-rose-500/50"
                 placeholder="Palavra-passe"
               />
 

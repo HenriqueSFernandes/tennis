@@ -124,7 +124,14 @@ export function Dashboard() {
       setAccounts(a);
       setFavorites(f);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error ao carregar dados");
+      const msg = e instanceof Error ? e.message : "Erro ao carregar dados";
+      if (msg === "No accounts configured") {
+        setError(
+          "Nenhuma conta configurada. Adiciona uma conta riotinto.pt para começar.",
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -422,7 +429,7 @@ export function Dashboard() {
                   to="/schedule"
                   className="group bg-slate-800 rounded-xl p-4 flex items-center gap-4 border border-slate-700/50 card-hover"
                 >
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 flex flex-col items-center justify-center text-white font-bold shrink-0 shadow-lg shadow-emerald-900/30">
+                  <div className="w-14 h-14 rounded-xl bg-linear-to-br from-emerald-600 to-teal-700 flex flex-col items-center justify-center text-white font-bold shrink-0 shadow-lg shadow-emerald-900/30">
                     <span className="text-lg leading-none">{dd}</span>
                     <span className="text-xs font-medium opacity-80">{mm}</span>
                   </div>
@@ -548,7 +555,7 @@ export function Dashboard() {
                   <div
                     className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 transition-all duration-200 ${
                       hasBooking
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
+                        ? "bg-linear-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20"
                         : "bg-slate-700"
                     }`}
                   >

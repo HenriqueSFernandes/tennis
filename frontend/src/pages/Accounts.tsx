@@ -405,7 +405,7 @@ function FormField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           maxLength={maxLength}
-          className={`w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200 ${
+          className={`w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-3 py-2.5 text-sm outline-hidden transition-all duration-200 ${
             icon ? "pl-10" : ""
           } ${
             error

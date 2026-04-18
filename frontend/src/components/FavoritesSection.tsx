@@ -112,7 +112,7 @@ export function FavoritesSection({
                         if (e.key === "Escape") cancelEditing();
                       }}
                       onBlur={() => saveEditing(fav)}
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-2 py-1 text-white text-sm focus:outline-hidden focus:border-emerald-500"
                     />
                   ) : (
                     <button
