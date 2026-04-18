@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       try {
         const { data } = await authClient.getSession();
-        setUser(data?.user as User | null);
+        setUser((data?.user as User | null) ?? null);
       } catch {
         setUser(null);
       } finally {
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Refresh user session
         const { data } = await authClient.getSession();
-        setUser(data?.user as User | null);
+        setUser((data?.user as User | null) ?? null);
         return {};
       } catch (error) {
         return {
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Refresh user session
         const { data } = await authClient.getSession();
-        setUser(data?.user as User | null);
+        setUser((data?.user as User | null) ?? null);
         return {};
       } catch (error) {
         return {
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const { data } = await authClient.getSession();
-      setUser(data?.user as User | null);
+      setUser((data?.user as User | null) ?? null);
     } catch {
       setUser(null);
     }
@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextValue = {
     user,
-    isAuthenticated: user !== null,
+    isAuthenticated: !!user,
     isLoading,
     signIn,
     signUp,

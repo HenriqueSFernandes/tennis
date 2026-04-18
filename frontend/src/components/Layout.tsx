@@ -43,7 +43,8 @@ export function Layout() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleLogoClick}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200"
+              type="button"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200 hover:cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <span className="text-xl">🎾</span>
@@ -63,6 +64,7 @@ export function Layout() {
             {/* User avatar - clickable to profile */}
             {user && (
               <button
+                type="button"
                 onClick={handleProfileClick}
                 className="flex items-center gap-2 hover:bg-slate-800/50 transition-colors duration-200 rounded-lg px-2 py-1 -mr-2"
               >
@@ -77,6 +79,7 @@ export function Layout() {
 
             <button
               onClick={handleLogout}
+              type="button"
               className="flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-slate-800/50"
               title="Sair"
             >
@@ -138,6 +141,7 @@ function HomeIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Home Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -156,6 +160,7 @@ function CalendarIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Calendar Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -174,6 +179,7 @@ function UsersIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Users Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -192,6 +198,7 @@ function LogoutIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>Logout Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -210,6 +217,7 @@ function UserIcon({ className }: { className?: string }) {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
+      <title>User Icon</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

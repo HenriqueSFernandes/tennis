@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 import {
   exportBookings as apiExportBookings,
   getFavorites as apiGetFavorites,
@@ -56,6 +57,7 @@ interface ScheduleData {
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { getSchedule, getAccounts, refresh, staleKeys } = useDataCache();
   const [bookings, setBookings] = useState<CurrentBookingInfo[]>([]);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
@@ -141,9 +143,10 @@ export function Dashboard() {
 
   useEffect(() => {
     if (mountedRef.current) return;
+    if (!isAuthenticated || authLoading) return;
     mountedRef.current = true;
     loadData();
-  }, [loadData]);
+  }, [loadData, isAuthenticated, authLoading]);
 
   const handleRefresh = async () => {
     await refresh();
