@@ -10,8 +10,10 @@ import {
   CheckIcon,
   EmptyState,
   ErrorAlert,
+  ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
+  InfoIcon,
   LockIcon,
   PhoneIcon,
   PlusIcon,
@@ -66,7 +68,7 @@ export function Accounts() {
       {
         field: "displayName",
         validate: (v) =>
-          v.length < 2 ? "Gnome deve ter pelo menos 2 characters" : undefined,
+          v.length < 2 ? "Nome deve ter pelo menos 2 characters" : undefined,
       },
       {
         field: "username",
@@ -202,9 +204,29 @@ export function Accounts() {
             </div>
           </div>
 
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 space-y-2">
+            <div className="flex items-start gap-3 text-amber-400 text-sm">
+              <InfoIcon className="w-5 h-5 shrink-0 mt-0.5" />
+              <p>
+                Para adicionares uma conta, precisas de ter uma conta válida no
+                site riotinto.pt. Se ainda não tiveres uma, podes{" "}
+                <a
+                  href="https://www.riotinto.pt/area-reservada?view=registration"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:no-underline text-amber-300"
+                >
+                  criar uma nova conta aqui
+                  <ExternalLinkIcon className="w-3 h-3 inline ml-1" />
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
-              label="Gnome de apresentação"
+              label="Nome de apresentação"
               placeholder="Ex: João Silva"
               value={stringValues.displayName}
               onChange={(v) => handleChange("displayName", v)}
