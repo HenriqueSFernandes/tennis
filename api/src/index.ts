@@ -35,7 +35,7 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      if (!origin) return "*";
+      if (!origin) return undefined;
       if (
         origin === "https://tennis.henriquesf.me" ||
         origin === "https://api.tennis.henriquesf.me"
