@@ -7,7 +7,7 @@ export function Layout() {
   const navigate = useNavigate();
 
   const navItems = [
-    { path: "/", label: "Dashboard", icon: HomeIcon },
+    { path: "/dashboard", label: "Dashboard", icon: HomeIcon },
     { path: "/schedule", label: "Campos", icon: CalendarIcon },
     { path: "/accounts", label: "Contas", icon: UsersIcon },
     { path: "/profile", label: "Perfil", icon: UserIcon },
@@ -19,6 +19,10 @@ export function Layout() {
 
   const handleProfileClick = () => {
     navigate("/profile");
+  };
+
+  const handleLogoClick = () => {
+    navigate("/");
   };
 
   // Get user initials for avatar
@@ -37,15 +41,22 @@ export function Layout() {
       <header className="glass sticky top-0 z-40 border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <span className="text-xl">🎾</span>
-            </div>
-            <div>
-              <h1 className="text-white font-semibold text-sm leading-tight">
-                Rio Tinto Tennis
-              </h1>
-              <p className="text-slate-500 text-xs">Court Booking Assistant</p>
-            </div>
+            <button
+              onClick={handleLogoClick}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <span className="text-xl">🎾</span>
+              </div>
+              <div>
+                <h1 className="text-white font-semibold text-sm leading-tight">
+                  Rio Tinto Tennis
+                </h1>
+                <p className="text-slate-500 text-xs">
+                  Court Booking Assistant
+                </p>
+              </div>
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
