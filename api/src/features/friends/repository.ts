@@ -432,3 +432,117 @@ export async function updateUsername(
 
   return { success: true };
 }
+
+export interface FriendBooking {
+  friendId: string;
+  friendName: string;
+  friendUsername: string;
+  courtId: number;
+  date: string;
+  dayIndex: number;
+  turno: string;
+  hora: string;
+  semana: number;
+}
+
+export async function getAllFriendsBookings(
+  userId: string,
+  weekOffset: number,
+): Promise<FriendBooking[]> {
+  const profile = await getProfileByUserId(userId);
+  if (!profile) return [];
+
+  const friendships = await prisma.friendship.findMany({
+    where: { userId: profile.id },
+    include: {
+      friend: {
+        include: {
+          user: { select: { name: true } },
+        },
+      },
+    },
+  });
+
+  const sharingFriends = friendships.filter(
+    (f) => f.friend.showBookingsToFriends,
+  );
+
+  if (sharingFriends.length === 0) return [];
+
+  const friendUserIds = sharingFriends.map((f) => f.friend.userId);
+
+  const accounts = await prisma.riotintoAccount.findMany({
+    where: { userId: { in: friendUserIds } },
+    select: { id: true, userId: true },
+  });
+
+  const accountMap = new Map<string, string>();
+  for (const acc of accounts) {
+    accountMap.set(acc.id, acc.userId);
+  }
+
+  const accountIds = accounts.map((a) => a.id);
+  if (accountIds.length === 0) return [];
+
+  const bookings = await prisma.bookingCache.findMany({
+    where: {
+      riotintoAccountId: { in: accountIds },
+      status: "booked",
+    },
+    orderBy: [{ date: "asc" }, { hora: "asc" }],
+  });
+
+  const friendProfileMap = new Map<
+    string,
+    { name: string; username: string }
+  >();
+  for (const f of sharingFriends) {
+    friendProfileMap.set(f.friend.userId, {
+      name: f.friend.user.name,
+      username: f.friend.username,
+    });
+  }
+
+  const result: FriendBooking[] = [];
+  for (const booking of bookings) {
+    const friendUserId = accountMap.get(booking.riotintoAccountId);
+    if (!friendUserId) continue;
+
+    const friend = friendProfileMap.get(friendUserId);
+    if (!friend) continue;
+
+    if (weekOffset === 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [dd, mm, yyyy] = booking.date.split("-").map(Number);
+      const bookingDate = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 0);
+      const diffDays = Math.floor(
+        (bookingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      if (diffDays < 0 || diffDays > 6) continue;
+    } else if (weekOffset === 1) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [dd, mm, yyyy] = booking.date.split("-").map(Number);
+      const bookingDate = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 0);
+      const diffDays = Math.floor(
+        (bookingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      if (diffDays < 7 || diffDays > 13) continue;
+    }
+
+    result.push({
+      friendId: friendUserId,
+      friendName: friend.name,
+      friendUsername: friend.username,
+      courtId: booking.courtId,
+      date: booking.date,
+      dayIndex: booking.dayIndex,
+      turno: booking.turno,
+      hora: booking.hora,
+      semana: weekOffset,
+    });
+  }
+
+  return result;
+}

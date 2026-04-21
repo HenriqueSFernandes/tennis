@@ -1,4 +1,5 @@
 import { request } from "../../../core/api/client";
+import type { FriendBooking } from "../../../types";
 import type {
   FriendBookingsResponse,
   FriendRequest,
@@ -78,4 +79,13 @@ export async function updateUsername(username: string): Promise<void> {
     method: "PUT",
     body: JSON.stringify({ username }),
   });
+}
+
+export async function getFriendsBookings(
+  weekOffset: number,
+): Promise<FriendBooking[]> {
+  const result = await request<{ bookings: FriendBooking[] }>(
+    `/friends/bookings?week=${weekOffset}`,
+  );
+  return result.bookings;
 }

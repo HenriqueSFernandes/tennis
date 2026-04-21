@@ -1,5 +1,6 @@
 export {
   handleAcceptRequest,
+  handleGetAllFriendsBookings,
   handleGetFriendBookings,
   handleGetMyProfile,
   handleIncomingRequests,

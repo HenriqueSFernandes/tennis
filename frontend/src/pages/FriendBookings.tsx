@@ -8,26 +8,50 @@ export function FriendBookings() {
   const { friendId } = useParams<{ friendId: string }>();
   const [data, setData] = useState<FriendBookingsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const mountedRef = useRef(false);
+  const refreshingRef = useRef(false);
 
   useEffect(() => {
-    if (mountedRef.current) return;
-    mountedRef.current = true;
-    loadData();
+    void loadData();
   }, [friendId]);
 
-  async function loadData() {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (refreshingRef.current) return;
+      void loadData(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [friendId]);
+
+  async function loadData(silent = false) {
     if (!friendId) return;
-    setLoading(true);
-    setError("");
+    if (silent && refreshingRef.current) return;
+
+    if (silent) {
+      refreshingRef.current = true;
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setError("");
+    }
+
     try {
       const result = await getFriendBookings(friendId);
       setData(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar reservas");
+      if (!silent) {
+        setError(e instanceof Error ? e.message : "Erro ao carregar reservas");
+      }
     } finally {
-      setLoading(false);
+      if (silent) {
+        refreshingRef.current = false;
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }
 
@@ -52,24 +76,36 @@ export function FriendBookings() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-white text-2xl font-bold">
-          Reservas de {data?.friend.displayName ?? "..."}
-        </h1>
-        <p className="text-slate-400 text-sm mt-0.5">
-          @{data?.friend.username}
-          {data?.lastSynced && (
-            <span className="text-slate-500">
-              {" "}
-              · Atualizado {formatTimeAgo(data.lastSynced)}
-            </span>
-          )}
-          {data?.isStale && (
-            <span className="text-amber-400 text-xs ml-2">
-              (dados podem estar desatualizados)
-            </span>
-          )}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-white text-2xl font-bold">
+            Reservas de {data?.friend.displayName ?? "..."}
+          </h1>
+          <p className="text-slate-400 text-sm mt-0.5">
+            @{data?.friend.username}
+            {data?.lastSynced && (
+              <span className="text-slate-500">
+                {" "}
+                · Atualizado {formatTimeAgo(data.lastSynced)}
+              </span>
+            )}
+            {data?.isStale && (
+              <span className="text-amber-400 text-xs ml-2">
+                (dados podem estar desatualizados)
+              </span>
+            )}
+          </p>
+        </div>
+        <button
+          onClick={() => void loadData(true)}
+          disabled={refreshing}
+          className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Atualizar"
+        >
+          <RefreshIcon
+            className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
+          />
+        </button>
       </div>
 
       {error && <ErrorAlert message={error} />}
@@ -126,5 +162,23 @@ export function FriendBookings() {
         </div>
       )}
     </div>
+  );
+}
+
+function RefreshIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
+    </svg>
   );
 }

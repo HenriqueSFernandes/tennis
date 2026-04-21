@@ -173,3 +173,15 @@ export interface BulkBookSelection {
   isConflict: boolean;
   conflictReason?: string;
 }
+
+export interface FriendBooking {
+  friendId: string;
+  friendName: string;
+  friendUsername: string;
+  courtId: number;
+  date: string;
+  dayIndex: number;
+  turno: string;
+  hora: string;
+  semana: number;
+}

@@ -26,6 +26,7 @@ import {
 } from "./features/favorites/routes";
 import {
   handleAcceptRequest,
+  handleGetAllFriendsBookings,
   handleGetFriendBookings,
   handleGetMyProfile,
   handleIncomingRequests,
@@ -132,6 +133,7 @@ app.get("/api/friends/:friendId/bookings", handleGetFriendBookings);
 app.put("/api/friends/privacy", handleUpdatePrivacy);
 app.put("/api/friends/username", handleUpdateUsername);
 app.get("/api/friends/me", handleGetMyProfile);
+app.get("/api/friends/bookings", handleGetAllFriendsBookings);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 

@@ -7,6 +7,7 @@ import {
 import {
   acceptFriendRequest,
   checkFriendshipExists,
+  getAllFriendsBookings,
   getIncomingRequests,
   getOrCreateProfile,
   getOutgoingRequests,
@@ -196,12 +197,7 @@ export async function handleGetFriendBookings(c: Context) {
       return c.json({ error: "Friend is not sharing bookings" }, 403);
     }
 
-    syncUserBookings(friendProfile.userId).catch((e) => {
-      console.error(
-        `Background sync failed for user ${friendProfile.userId}:`,
-        e,
-      );
-    });
+    await syncUserBookings(friendProfile.userId);
 
     const bookingsData = await getFriendCachedBookings(friendProfile.userId);
 
@@ -280,5 +276,25 @@ export async function handleUpdateUsername(c: Context) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return c.json({ error: `Username update error: ${message}` }, 500);
+  }
+}
+
+export async function handleGetAllFriendsBookings(c: Context) {
+  try {
+    const userId = getUserIdFromContext(c);
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const weekParam = c.req.query("week");
+    const weekOffset = weekParam ? parseInt(weekParam, 10) : 0;
+
+    if (weekOffset !== 0 && weekOffset !== 1) {
+      return c.json({ error: "Week must be 0 or 1" }, 400);
+    }
+
+    const bookings = await getAllFriendsBookings(userId, weekOffset);
+    return c.json({ bookings });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return c.json({ error: `Friends bookings error: ${message}` }, 500);
   }
 }

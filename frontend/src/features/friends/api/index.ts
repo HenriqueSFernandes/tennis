@@ -2,6 +2,7 @@ export {
   acceptFriendRequest,
   getFriendBookings,
   getFriends,
+  getFriendsBookings,
   getIncomingRequests,
   getMyProfile,
   getOutgoingRequests,
