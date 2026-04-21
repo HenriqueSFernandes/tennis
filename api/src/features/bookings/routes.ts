@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import type { BookRequest, CancelRequest } from "../../types/index";
 import { book, cancel, getBookings } from "../accounts/service";
 import { getUserIdFromContext } from "../auth/middleware";
+import { onBookingCancelled, onBookingSuccess } from "../booking-cache/index";
 
 export async function handleGetBookings(c: Context) {
   try {
@@ -38,6 +39,17 @@ export async function handleBook(c: Context) {
     if (!result.success) {
       return c.json({ error: result.error }, 400);
     }
+
+    await onBookingSuccess(
+      accountId,
+      courtId,
+      date,
+      dayIndex,
+      String(turno),
+      String(hora),
+      semana,
+    );
+
     return c.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -67,6 +79,9 @@ export async function handleCancel(c: Context) {
     if (!result.success) {
       return c.json({ error: result.error }, 400);
     }
+
+    await onBookingCancelled(accountId, courtId, date, String(hora));
+
     return c.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

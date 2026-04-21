@@ -4,6 +4,8 @@ import { Layout } from "./components/Layout";
 import { DataCacheProvider } from "./DataCacheContext";
 import { Accounts } from "./pages/Accounts";
 import { Dashboard } from "./pages/Dashboard";
+import { FriendBookings } from "./pages/FriendBookings";
+import { Friends } from "./pages/Friends";
 import { Login } from "./pages/Login";
 import { Profile } from "./pages/Profile";
 import { Schedule } from "./pages/Schedule";
@@ -156,6 +158,8 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="schedule" element={<Schedule />} />
         <Route path="accounts" element={<Accounts />} />
+        <Route path="friends" element={<Friends />} />
+        <Route path="friends/:friendId" element={<FriendBookings />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 

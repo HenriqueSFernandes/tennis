@@ -20,6 +20,7 @@ model User {
   accounts      Account[]
   
   riotintoAccounts RiotintoAccount[]
+  profile         UserProfile?
 
   @@map("user")
 }
@@ -86,6 +87,7 @@ model RiotintoAccount {
 
   sessionCache RiotintoSession?
   favorites    RiotintoFavorite[]
+  bookingCache BookingCache[]
 
   @@unique([userId, username])
   @@map("riotinto_accounts")
@@ -116,4 +118,68 @@ model RiotintoFavorite {
 
   @@unique([accountId, courtId, dayOfWeek, time])
   @@map("riotinto_favorites")
+}
+
+// ── Social features ────────────────────────────────────────────────────────────
+
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  username              String   @unique
+  showBookingsToFriends Boolean  @default(true) @map("show_bookings_to_friends")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentFriendRequests     FriendRequest[] @relation("SentRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
+  friendshipsAsRequester Friendship[]    @relation("FriendshipsAsRequester")
+  friendshipsAsReceiver  Friendship[]    @relation("FriendshipsAsReceiver")
+
+  @@map("user_profiles")
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  senderId   String   @map("sender_id")
+  receiverId String   @map("receiver_id")
+  status     String   @default("pending")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  sender   UserProfile @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver UserProfile @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@map("friend_requests")
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  friendId  String   @map("friend_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   UserProfile @relation("FriendshipsAsRequester", fields: [userId], references: [id], onDelete: Cascade)
+  friend UserProfile @relation("FriendshipsAsReceiver", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@map("friendships")
+}
+
+model BookingCache {
+  id                String   @id @default(cuid())
+  riotintoAccountId String   @map("riotinto_account_id")
+  courtId           Int      @map("court_id")
+  date              String
+  dayIndex          Int      @map("day_index")
+  turno             String
+  hora              String
+  semana            Int
+  status            String   @default("booked")
+  lastSynced        DateTime @default(now()) @map("last_synced")
+
+  account RiotintoAccount @relation(fields: [riotintoAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([riotintoAccountId, courtId, date, hora])
+  @@map("booking_cache")
 }
