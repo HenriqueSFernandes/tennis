@@ -44,7 +44,7 @@ export function CourtGrid({
   const friendBookingMap = new Map<string, FriendBooking>();
   for (const fb of friendBookings) {
     if (fb.courtId === schedule.courtId) {
-      friendBookingMap.set(`${fb.dayIndex}-${fb.hora}`, fb);
+      friendBookingMap.set(`${fb.dayIndex}-${fb.time}`, fb);
     }
   }
 
