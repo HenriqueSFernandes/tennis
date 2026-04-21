@@ -69,6 +69,7 @@ export interface FriendBookingsResponse {
     dayIndex: number;
     turno: string;
     hora: string;
+    time: string;
     semana: number;
   }[];
   lastSynced: string;

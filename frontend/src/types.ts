@@ -63,6 +63,7 @@ export interface BookRequest {
   dayIndex: number;
   turno: number;
   hora: number;
+  time: string;
   semana: number;
 }
 
@@ -183,5 +184,6 @@ export interface FriendBooking {
   dayIndex: number;
   turno: string;
   hora: string;
+  time: string;
   semana: number;
 }

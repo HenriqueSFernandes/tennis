@@ -210,6 +210,7 @@ export function Schedule() {
       dayIndex: bookSlot.dayIndex,
       turno: bookSlot.turno,
       hora: bookSlot.hora,
+      time: bookSlot.time,
       semana: weekOffset,
     });
     invalidate(`schedule:${weekOffset}`);

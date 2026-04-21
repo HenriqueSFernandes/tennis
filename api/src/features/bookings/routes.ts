@@ -23,7 +23,8 @@ export async function handleBook(c: Context) {
     if (!userId) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json<BookRequest>();
-    const { accountId, courtId, date, dayIndex, turno, hora, semana } = body;
+    const { accountId, courtId, date, dayIndex, turno, hora, semana, time } =
+      body;
 
     const result = await book(
       userId,
@@ -47,6 +48,7 @@ export async function handleBook(c: Context) {
       dayIndex,
       String(turno),
       String(hora),
+      time,
       semana,
     );
 

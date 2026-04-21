@@ -8,6 +8,7 @@ export async function upsertBooking(
   dayIndex: number,
   turno: string,
   hora: string,
+  time: string,
   semana: number,
 ): Promise<CachedBooking> {
   const row = await prisma.bookingCache.upsert({
@@ -26,12 +27,14 @@ export async function upsertBooking(
       dayIndex,
       turno,
       hora,
+      time,
       semana,
       status: "booked",
     },
     update: {
       dayIndex,
       turno,
+      time,
       semana,
       status: "booked",
       lastSynced: new Date(),
@@ -46,6 +49,7 @@ export async function upsertBooking(
     dayIndex: row.dayIndex,
     turno: row.turno,
     hora: row.hora,
+    time: row.time,
     semana: row.semana,
     status: row.status,
     lastSynced: row.lastSynced.toISOString(),
@@ -93,6 +97,7 @@ export async function getBookingsByAccountIds(
     dayIndex: r.dayIndex,
     turno: r.turno,
     hora: r.hora,
+    time: r.time,
     semana: r.semana,
     status: r.status,
     lastSynced: r.lastSynced.toISOString(),

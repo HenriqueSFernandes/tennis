@@ -1,4 +1,7 @@
-import { getCurrentBooking as riotintoGetCurrentBooking } from "../../integrations/riotinto/index.js";
+import {
+  getCourtSchedule as riotintoGetCourtSchedule,
+  getSession,
+} from "../../integrations/riotinto/index.js";
 import { prisma } from "../../utils/prisma.js";
 import {
   getDecryptedPassword,
@@ -25,33 +28,49 @@ export async function syncUserBookings(userId: string): Promise<SyncResult> {
       const pwd = await getDecryptedPassword(userId, acc.id);
       if (!pwd) continue;
 
+      const session = await getSession(acc.id, stored.username, pwd);
+      const ourUsers = new Map<string, string>();
+      if (session.userId && session.userId !== "0") {
+        ourUsers.set(session.userId, acc.id);
+      }
+
       const currentBookings = new Map<string, CachedBooking>();
 
-      for (const courtId of [1, 2]) {
-        const current = await riotintoGetCurrentBooking(
-          acc.id,
-          stored.username,
-          pwd,
-          courtId,
+      for (const semana of [0, 1]) {
+        const schedules = await Promise.all(
+          [1, 2].map((courtId) =>
+            riotintoGetCourtSchedule(
+              acc.id,
+              stored.username,
+              pwd,
+              courtId,
+              semana,
+              ourUsers,
+            ),
+          ),
         );
 
-        if (current) {
-          const key = `${acc.id}-${courtId}-${current.date}-${current.time}`;
-          const dayIndex = parseDayIndex(current.date);
-          const semana = 0;
-          const turno = "0";
+        for (const schedule of schedules) {
+          for (const slot of schedule.slots) {
+            const isAccountBooking =
+              (slot.isOurs && slot.ourAccountId === acc.id) ||
+              slot.bookedBy === stored.username;
+            if (!isAccountBooking) continue;
 
-          const cached = await upsertBooking(
-            acc.id,
-            courtId,
-            current.date,
-            dayIndex,
-            turno,
-            current.time,
-            semana,
-          );
-          currentBookings.set(key, cached);
-          synced++;
+            const cached = await upsertBooking(
+              acc.id,
+              schedule.courtId,
+              slot.date,
+              slot.dayIndex,
+              String(slot.turno),
+              String(slot.hora),
+              slot.time,
+              semana,
+            );
+            const key = `${acc.id}-${schedule.courtId}-${slot.date}-${slot.hora}`;
+            currentBookings.set(key, cached);
+            synced++;
+          }
         }
       }
 
@@ -85,6 +104,7 @@ export async function getFriendCachedBookings(friendUserId: string): Promise<{
     dayIndex: number;
     turno: string;
     hora: string;
+    time: string;
     semana: number;
   }[];
   lastSynced: string;
@@ -111,6 +131,7 @@ export async function getFriendCachedBookings(friendUserId: string): Promise<{
     dayIndex: b.dayIndex,
     turno: b.turno,
     hora: b.hora,
+    time: b.time,
     semana: b.semana,
   }));
 
@@ -130,9 +151,19 @@ export function onBookingSuccess(
   dayIndex: number,
   turno: string,
   hora: string,
+  time: string,
   semana: number,
 ) {
-  return upsertBooking(accountId, courtId, date, dayIndex, turno, hora, semana);
+  return upsertBooking(
+    accountId,
+    courtId,
+    date,
+    dayIndex,
+    turno,
+    hora,
+    time,
+    semana,
+  );
 }
 
 export function onBookingCancelled(
@@ -142,11 +173,4 @@ export function onBookingCancelled(
   hora: string,
 ) {
   return markCancelled(accountId, courtId, date, hora);
-}
-
-function parseDayIndex(dateStr: string): number {
-  const [dd, mm, yyyy] = dateStr.split("-").map(Number);
-  const date = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 0);
-  const day = date.getDay();
-  return day === 0 ? 6 : day - 1;
 }

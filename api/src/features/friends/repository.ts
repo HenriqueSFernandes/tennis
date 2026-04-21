@@ -442,6 +442,7 @@ export interface FriendBooking {
   dayIndex: number;
   turno: string;
   hora: string;
+  time: string;
   semana: number;
 }
 
@@ -540,6 +541,7 @@ export async function getAllFriendsBookings(
       dayIndex: booking.dayIndex,
       turno: booking.turno,
       hora: booking.hora,
+      time: booking.time,
       semana: weekOffset,
     });
   }

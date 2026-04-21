@@ -151,7 +151,7 @@ export function FriendBookings() {
                   Court {booking.courtId}
                 </p>
                 <p className="text-violet-400 text-sm font-medium">
-                  {booking.hora}
+                  {booking.time}
                 </p>
                 <p className="text-slate-400 text-xs mt-0.5">
                   {booking.accountDisplayName}

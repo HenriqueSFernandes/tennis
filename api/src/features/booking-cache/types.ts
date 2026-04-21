@@ -6,6 +6,7 @@ export interface CachedBooking {
   dayIndex: number;
   turno: string;
   hora: string;
+  time: string;
   semana: number;
   status: string;
   lastSynced: string;
