@@ -152,6 +152,10 @@ export function Schedule() {
     try {
       await refresh();
       await loadData();
+      if (showFriendBookings) {
+        const bookings = await getFriendsBookings(weekOffset);
+        setFriendBookings(bookings);
+      }
     } catch {
       // errors handled inside loadData / DataCacheContext
     } finally {
