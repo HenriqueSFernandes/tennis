@@ -344,6 +344,10 @@ export function Friends() {
                 <div className="flex items-center gap-2">
                   <Link
                     to={`/friends/${friendship.friendId}`}
+                    state={{
+                      displayName: friendship.friend.user.name,
+                      username: friendship.friend.username,
+                    }}
                     className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition-all duration-200 btn-press"
                   >
                     Ver reservas

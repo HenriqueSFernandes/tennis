@@ -236,7 +236,7 @@ export async function removeFriendship(
     return { success: false, error: "User profile not found" };
   }
 
-  const friendProfile = await getProfileByUserId(friendId);
+  const friendProfile = await getProfileById(friendId);
   if (!friendProfile) {
     return { success: false, error: "Friend profile not found" };
   }

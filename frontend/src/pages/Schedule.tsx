@@ -148,8 +148,15 @@ export function Schedule() {
   }, [schedule, loading, location.state]);
 
   const handleRefresh = async () => {
-    await refresh();
-    await loadData();
+    setLoading(true);
+    try {
+      await refresh();
+      await loadData();
+    } catch {
+      // errors handled inside loadData / DataCacheContext
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isScheduleStale = staleKeys.has(`schedule:${weekOffset}`);

@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { ErrorAlert } from "../components/ui";
 import { getFriendBookings } from "../features/friends/api";
 import type { FriendBookingsResponse } from "../features/friends/types";
 
 export function FriendBookings() {
   const { friendId } = useParams<{ friendId: string }>();
+  const location = useLocation();
+  const initialFriend = (location.state as
+    | { displayName?: string; username?: string }
+    | undefined) ?? {};
+
   const [data, setData] = useState<FriendBookingsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,10 +84,11 @@ export function FriendBookings() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-white text-2xl font-bold">
-            Reservas de {data?.friend.displayName ?? "..."}
+            Reservas de{" "}
+            {data?.friend.displayName ?? initialFriend.displayName ?? "..."}
           </h1>
           <p className="text-slate-400 text-sm mt-0.5">
-            @{data?.friend.username}
+            @{data?.friend.username ?? initialFriend.username ?? ""}
             {data?.lastSynced && (
               <span className="text-slate-500">
                 {" "}
