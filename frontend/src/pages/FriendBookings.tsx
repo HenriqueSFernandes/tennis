@@ -22,16 +22,6 @@ export function FriendBookings() {
     void loadData();
   }, [friendId]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState !== "visible") return;
-      if (refreshingRef.current) return;
-      void loadData(true);
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [friendId]);
-
   async function loadData(silent = false) {
     if (!friendId) return;
     if (silent && refreshingRef.current) return;
