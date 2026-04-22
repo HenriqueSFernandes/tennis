@@ -135,9 +135,15 @@ export async function getFriendCachedBookings(friendUserId: string): Promise<{
     semana: b.semana,
   }));
 
-  const lastSynced =
-    bookings.length > 0 ? bookings[bookings.length - 1]!.lastSynced : "";
+  const lastSynced = bookings.reduce((latest, booking) => {
+    if (!latest) {
+      return booking.lastSynced;
+    }
 
+    return new Date(booking.lastSynced).getTime() > new Date(latest).getTime()
+      ? booking.lastSynced
+      : latest;
+  }, "");
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   const isStale = bookings.some((b) => new Date(b.lastSynced) < fiveMinutesAgo);
 
