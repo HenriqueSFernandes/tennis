@@ -1,6 +1,6 @@
 import {
-  getCourtSchedule as riotintoGetCourtSchedule,
   getSession,
+  getCourtSchedule as riotintoGetCourtSchedule,
 } from "../../integrations/riotinto/index.js";
 import { prisma } from "../../utils/prisma.js";
 import {

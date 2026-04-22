@@ -7,9 +7,10 @@ import type { FriendBookingsResponse } from "../features/friends/types";
 export function FriendBookings() {
   const { friendId } = useParams<{ friendId: string }>();
   const location = useLocation();
-  const initialFriend = (location.state as
-    | { displayName?: string; username?: string }
-    | undefined) ?? {};
+  const initialFriend =
+    (location.state as
+      | { displayName?: string; username?: string }
+      | undefined) ?? {};
 
   const [data, setData] = useState<FriendBookingsResponse | null>(null);
   const [loading, setLoading] = useState(true);
