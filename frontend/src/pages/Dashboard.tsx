@@ -149,8 +149,15 @@ export function Dashboard() {
   }, [loadData, isAuthenticated, authLoading]);
 
   const handleRefresh = async () => {
-    await refresh();
-    await loadData();
+    setLoading(true);
+    try {
+      await refresh();
+      await loadData();
+    } catch {
+      // errors handled inside loadData / DataCacheContext
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = async () => {

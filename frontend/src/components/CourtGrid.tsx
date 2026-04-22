@@ -2,6 +2,7 @@ import type {
   AccountSummary,
   CourtSchedule,
   Favorite,
+  FriendBooking,
   ScheduleSlot,
 } from "../types";
 
@@ -11,6 +12,7 @@ interface CourtGridProps {
   schedule: CourtSchedule;
   accounts: AccountSummary[];
   favorites?: Favorite[];
+  friendBookings?: FriendBooking[];
   onSlotClick: (slot: ScheduleSlot, courtId: number) => void;
   onToggleFavorite?: (
     slot: ScheduleSlot,
@@ -23,6 +25,7 @@ export function CourtGrid({
   schedule,
   accounts,
   favorites = [],
+  friendBookings = [],
   onSlotClick,
   onToggleFavorite,
 }: CourtGridProps) {
@@ -36,6 +39,13 @@ export function CourtGrid({
   const favoriteMap = new Map<string, Favorite>();
   for (const fav of favorites) {
     favoriteMap.set(`${fav.dayOfWeek}-${fav.time}-${fav.courtId}`, fav);
+  }
+
+  const friendBookingMap = new Map<string, FriendBooking>();
+  for (const fb of friendBookings) {
+    if (fb.courtId === schedule.courtId) {
+      friendBookingMap.set(`${fb.dayIndex}-${fb.time}`, fb);
+    }
   }
 
   function isSlotFavorited(
@@ -52,6 +62,13 @@ export function CourtGrid({
     courtId: number,
   ): Favorite | undefined {
     return favoriteMap.get(`${dayIndex}-${time}-${courtId}`);
+  }
+
+  function getFriendBookingForSlot(
+    dayIndex: number,
+    time: string,
+  ): FriendBooking | undefined {
+    return friendBookingMap.get(`${dayIndex}-${time}`);
   }
 
   function isPastDate(date: string): boolean {
@@ -85,15 +102,18 @@ export function CourtGrid({
   ): string {
     const past = isPastDate(schedule.weekDates[dayIndex] ?? "");
     const favorited = slot && isSlotFavorited(dayIndex, slot.time, courtId);
+    const friendBooking = slot && getFriendBookingForSlot(dayIndex, slot.time);
     const base =
       "rounded-lg text-xs text-center transition-all duration-200 select-none relative overflow-hidden";
 
     if (!slot) return `${base} bg-transparent`;
     if (past) return `${base} bg-slate-800/50 text-slate-600`;
-    if (favorited && !slot.bookedBy && !slot.isOurs)
-      return `${base} bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer border-2 border-amber-500/50 btn-press`;
     if (slot.isOurs)
       return `${base} bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-900/20 cursor-pointer btn-press`;
+    if (friendBooking)
+      return `${base} bg-violet-600 text-white font-medium shadow-lg shadow-violet-900/20`;
+    if (favorited && !slot.bookedBy && !slot.isOurs)
+      return `${base} bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer border-2 border-amber-500/50 btn-press`;
     if (slot.bookedBy)
       return `${base} bg-rose-500/10 text-rose-300/60 cursor-not-allowed`;
     return `${base} bg-slate-700 hover:bg-slate-600 text-slate-300 cursor-pointer hover:shadow-lg hover:shadow-black/20 btn-press`;
@@ -183,6 +203,9 @@ export function CourtGrid({
                   const _favorite = slot
                     ? getFavoriteForSlot(dayIdx, slot.time, schedule.courtId)
                     : undefined;
+                  const friendBooking = slot
+                    ? getFriendBookingForSlot(dayIdx, slot.time)
+                    : undefined;
 
                   function handleFavoriteClick(e: React.MouseEvent) {
                     e.stopPropagation();
@@ -207,7 +230,12 @@ export function CourtGrid({
                           slot &&
                           onSlotClick(slot, schedule.courtId)
                         }
-                        title={getSlotTooltip(slot, past, favorited)}
+                        title={getSlotTooltip(
+                          slot,
+                          past,
+                          favorited,
+                          friendBooking,
+                        )}
                       >
                         {slot?.isOurs ? (
                           <div className="flex flex-col items-center gap-0.5">
@@ -217,6 +245,12 @@ export function CourtGrid({
                                   " ",
                                 )[0]
                               }
+                            </span>
+                          </div>
+                        ) : friendBooking ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-[10px] opacity-80 truncate max-w-full">
+                              {friendBooking.friendName.split(" ")[0]}
                             </span>
                           </div>
                         ) : slot?.bookedBy ? (
@@ -277,6 +311,7 @@ export function CourtGrid({
       <div className="px-4 py-3 border-t border-slate-700/50 bg-slate-800/30">
         <div className="flex flex-wrap gap-4 text-xs">
           <LegendItem color="bg-emerald-600" label="A tua reserva" />
+          <LegendItem color="bg-violet-600" label="Reserva de amigo" />
           <LegendItem
             color="bg-rose-500/20"
             dotColor="bg-rose-400/60"
@@ -298,10 +333,14 @@ export function CourtGrid({
     slot: ScheduleSlot | undefined,
     past: boolean,
     favorited?: boolean,
+    friendBooking?: FriendBooking,
   ): string {
     if (!slot || past) return "";
     if (slot.isOurs) {
       return `Reservado por ${getAccountName(slot.ourAccountId ?? "")} - Clique para cancelar`;
+    }
+    if (friendBooking) {
+      return `Reservado por ${friendBooking.friendName}`;
     }
     if (slot.bookedBy) {
       return `Reservado por ${slot.bookedByName ?? slot.bookedBy}`;

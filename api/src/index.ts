@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import "dotenv/config";
 
 import { PORT } from "./config/index";
+
 import {
   handleAddAccount,
   handleDeleteAccount,
@@ -23,6 +24,21 @@ import {
   handleListFavorites,
   handleUpdateFavorite,
 } from "./features/favorites/routes";
+import {
+  handleAcceptRequest,
+  handleGetAllFriendsBookings,
+  handleGetFriendBookings,
+  handleGetMyProfile,
+  handleIncomingRequests,
+  handleListFriends,
+  handleOutgoingRequests,
+  handleRejectRequest,
+  handleRemoveFriend,
+  handleSearchUsers,
+  handleSendRequest,
+  handleUpdatePrivacy,
+  handleUpdateUsername,
+} from "./features/friends/index";
 import { handleExportBookings } from "./features/ics-export/routes";
 import { handleGetSchedule } from "./features/schedule/routes";
 import { auth } from "./utils/auth";
@@ -72,6 +88,7 @@ app.use("/api/book/*", authMiddleware);
 app.use("/api/schedule", authMiddleware);
 app.use("/api/favorites/*", authMiddleware);
 app.use("/api/bulk-book", authMiddleware);
+app.use("/api/friends/*", authMiddleware);
 
 // ── Riotinto Accounts ────────────────────────────────────────────────────────
 
@@ -101,6 +118,22 @@ app.delete("/api/favorites/:id", handleDeleteFavorite);
 // ── Bulk Book ─────────────────────────────────────────────────────────────────
 
 app.post("/api/bulk-book", handleBulkBook);
+
+// ── Friends ──────────────────────────────────────────────────────────────────
+
+app.get("/api/friends", handleListFriends);
+app.get("/api/friends/search", handleSearchUsers);
+app.post("/api/friends/request", handleSendRequest);
+app.post("/api/friends/request/:id/accept", handleAcceptRequest);
+app.post("/api/friends/request/:id/reject", handleRejectRequest);
+app.get("/api/friends/requests/incoming", handleIncomingRequests);
+app.get("/api/friends/requests/outgoing", handleOutgoingRequests);
+app.delete("/api/friends/:friendId", handleRemoveFriend);
+app.get("/api/friends/:friendId/bookings", handleGetFriendBookings);
+app.put("/api/friends/privacy", handleUpdatePrivacy);
+app.put("/api/friends/username", handleUpdateUsername);
+app.get("/api/friends/me", handleGetMyProfile);
+app.get("/api/friends/bookings", handleGetAllFriendsBookings);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 

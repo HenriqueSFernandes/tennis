@@ -1,0 +1,15 @@
+export {
+  acceptFriendRequest,
+  getFriendBookings,
+  getFriends,
+  getFriendsBookings,
+  getIncomingRequests,
+  getMyProfile,
+  getOutgoingRequests,
+  rejectFriendRequest,
+  removeFriend,
+  searchFriends,
+  sendFriendRequest,
+  updatePrivacy,
+  updateUsername,
+} from "./friendsApi";

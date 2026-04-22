@@ -106,6 +106,7 @@ export interface BookRequest {
   dayIndex: number;
   turno: number;
   hora: number;
+  time: string;
   semana: number;
 }
 

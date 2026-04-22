@@ -63,6 +63,7 @@ export interface BookRequest {
   dayIndex: number;
   turno: number;
   hora: number;
+  time: string;
   semana: number;
 }
 
@@ -172,4 +173,17 @@ export interface BulkBookSelection {
   isAvailable: boolean;
   isConflict: boolean;
   conflictReason?: string;
+}
+
+export interface FriendBooking {
+  friendId: string;
+  friendName: string;
+  friendUsername: string;
+  courtId: number;
+  date: string;
+  dayIndex: number;
+  turno: string;
+  hora: string;
+  time: string;
+  semana: number;
 }

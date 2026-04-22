@@ -11,14 +11,17 @@ import { AddFavoriteModal } from "../components/AddFavoriteModal";
 import { BookingModal, CancelModal } from "../components/BookingModal";
 import { CourtGrid } from "../components/CourtGrid";
 import { useDataCache } from "../DataCacheContext";
+import { getFriendsBookings } from "../features/friends/api";
 import type {
   AccountSummary,
   Favorite,
+  FriendBooking,
   ScheduleResponse,
   ScheduleSlot,
 } from "../types";
 
 const WEEK_LABELS = ["Esta semana", "Próxima semana"];
+const FRIEND_TOGGLE_KEY = "rio-tinto-show-friend-bookings";
 
 export function Schedule() {
   const location = useLocation();
@@ -37,6 +40,13 @@ export function Schedule() {
   const [weekDirection, setWeekDirection] = useState<"next" | "prev" | null>(
     null,
   );
+
+  const [showFriendBookings, setShowFriendBookings] = useState(() => {
+    const saved = localStorage.getItem(FRIEND_TOGGLE_KEY);
+    return saved === "true";
+  });
+  const [friendBookings, setFriendBookings] = useState<FriendBooking[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
 
   // Modal state
   const [bookSlot, setBookSlot] = useState<ScheduleSlot | null>(null);
@@ -75,6 +85,27 @@ export function Schedule() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!showFriendBookings) {
+      setFriendBookings([]);
+      return;
+    }
+
+    async function loadFriendBookings() {
+      setLoadingFriends(true);
+      try {
+        const bookings = await getFriendsBookings(weekOffset);
+        setFriendBookings(bookings);
+      } catch (e) {
+        console.error("Failed to load friend bookings:", e);
+      } finally {
+        setLoadingFriends(false);
+      }
+    }
+
+    loadFriendBookings();
+  }, [showFriendBookings, weekOffset]);
 
   useEffect(() => {
     if (weekDirection) {
@@ -117,8 +148,19 @@ export function Schedule() {
   }, [schedule, loading, location.state]);
 
   const handleRefresh = async () => {
-    await refresh();
-    await loadData();
+    setLoading(true);
+    try {
+      await refresh();
+      await loadData();
+      if (showFriendBookings) {
+        const bookings = await getFriendsBookings(weekOffset);
+        setFriendBookings(bookings);
+      }
+    } catch {
+      // errors handled inside loadData / DataCacheContext
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isScheduleStale = staleKeys.has(`schedule:${weekOffset}`);
@@ -179,6 +221,7 @@ export function Schedule() {
       dayIndex: bookSlot.dayIndex,
       turno: bookSlot.turno,
       hora: bookSlot.hora,
+      time: bookSlot.time,
       semana: weekOffset,
     });
     invalidate(`schedule:${weekOffset}`);
@@ -309,6 +352,63 @@ export function Schedule() {
         </div>
       </div>
 
+      {/* Friend Bookings Toggle */}
+      <div className="bg-slate-800 rounded-xl px-4 py-3 flex items-center justify-between border border-slate-700/50">
+        <div className="flex items-center gap-3">
+          <UsersIcon className="w-4 h-4 text-slate-400" />
+          <span className="text-white text-sm font-medium">
+            Reservas de amigos
+          </span>
+          {loadingFriends && (
+            <svg
+              className="w-3.5 h-3.5 animate-spin text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {showFriendBookings && friendBookings.length > 0 && (
+            <span className="text-slate-500 text-xs">
+              {friendBookings.length} reserva
+              {friendBookings.length !== 1 ? "s" : ""}
+            </span>
+          )}
+          <button
+            onClick={() => {
+              const next = !showFriendBookings;
+              setShowFriendBookings(next);
+              localStorage.setItem(FRIEND_TOGGLE_KEY, String(next));
+            }}
+            className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+              showFriendBookings ? "bg-violet-600" : "bg-slate-600"
+            }`}
+            role="switch"
+            aria-checked={showFriendBookings}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                showFriendBookings ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-200 rounded-xl p-4 text-sm flex items-start gap-3">
           <AlertIcon className="w-5 h-5 shrink-0 mt-0.5" />
@@ -333,6 +433,7 @@ export function Schedule() {
               schedule={court}
               accounts={accounts}
               favorites={favorites}
+              friendBookings={friendBookings}
               onSlotClick={handleSlotClick}
               onToggleFavorite={handleToggleFavorite}
             />
@@ -480,6 +581,24 @@ function AlertIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
       />
     </svg>
   );

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { getMyProfile, updateUsername } from "../features/friends/api";
+import type { UserProfile } from "../features/friends/types";
 import { authClient } from "../lib/auth";
 import { getDeviceDisplayName } from "../utils/userAgent";
 
@@ -279,6 +281,24 @@ function SignOutIcon({ className }: { className?: string }) {
   );
 }
 
+function AtIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+      />
+    </svg>
+  );
+}
+
 export function Profile() {
   const { user, signOut, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -312,6 +332,13 @@ export function Profile() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [username, setUsername] = useState("");
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameSuccess, setUsernameSuccess] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem(DEFAULT_VIEW_KEY) as DefaultView;
     if (saved) {
@@ -321,7 +348,18 @@ export function Profile() {
 
   useEffect(() => {
     loadSessions();
+    loadProfile();
   }, []);
+
+  async function loadProfile() {
+    try {
+      const p = await getMyProfile();
+      setProfile(p);
+      setUsername(p.username);
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+    }
+  }
 
   async function loadSessions() {
     try {
@@ -379,6 +417,36 @@ export function Profile() {
       setNameError("Erro ao guardar o nome");
     } finally {
       setIsSavingName(false);
+    }
+  }
+
+  async function handleSaveUsername() {
+    const normalized = username.toLowerCase().trim();
+    if (!/^[a-z0-9_.]{3,20}$/.test(normalized)) {
+      setUsernameError(
+        "3-20 caracteres. Apenas letras, números, underscores e pontos",
+      );
+      return;
+    }
+
+    setIsSavingUsername(true);
+    setUsernameError("");
+    setUsernameSuccess(false);
+
+    try {
+      await updateUsername(normalized);
+      setUsernameSuccess(true);
+      setIsEditingUsername(false);
+      const p = await getMyProfile();
+      setProfile(p);
+      setUsername(p.username);
+      setTimeout(() => setUsernameSuccess(false), 3000);
+    } catch (e) {
+      setUsernameError(
+        e instanceof Error ? e.message : "Erro ao guardar username",
+      );
+    } finally {
+      setIsSavingUsername(false);
     }
   }
 
@@ -592,6 +660,103 @@ export function Profile() {
               </div>
               <button
                 onClick={() => setIsEditingName(true)}
+                className="text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
+              >
+                Editar
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Username Section */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <AtIcon className="w-4 h-4 text-slate-500" />
+          <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+            Username
+          </h2>
+        </div>
+
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700/50">
+          {isEditingUsername ? (
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-slate-900 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all duration-200 ring-1 ring-slate-700 focus:ring-2 focus:ring-emerald-500/50"
+                  placeholder="username"
+                  autoFocus
+                />
+                <p className="text-slate-500 text-xs mt-1.5">
+                  3-20 caracteres. Apenas letras, números, underscores e pontos.
+                </p>
+              </div>
+              {usernameError && (
+                <p className="text-rose-400 text-xs">{usernameError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setIsEditingUsername(false);
+                    setUsernameError("");
+                    setUsername(profile?.username ?? "");
+                  }}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded-xl py-2.5 text-sm font-medium transition-all duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveUsername}
+                  disabled={isSavingUsername}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 text-white rounded-xl py-2.5 text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  {isSavingUsername ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span>A guardar...</span>
+                    </>
+                  ) : (
+                    "Guardar"
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white text-sm font-medium">
+                  @{profile?.username ?? username}
+                </p>
+                {usernameSuccess && (
+                  <p className="text-emerald-400 text-xs flex items-center gap-1 mt-1">
+                    <CheckIcon className="w-3 h-3" />
+                    Username atualizado
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setIsEditingUsername(true)}
                 className="text-emerald-400 text-sm font-medium hover:text-emerald-300 transition-colors"
               >
                 Editar
