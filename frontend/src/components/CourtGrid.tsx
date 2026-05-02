@@ -44,7 +44,11 @@ export function CourtGrid({
   const friendBookingMap = new Map<string, FriendBooking>();
   for (const fb of friendBookings) {
     if (fb.courtId === schedule.courtId) {
-      friendBookingMap.set(`${fb.dayIndex}-${fb.time}`, fb);
+      // Match by actual date to ensure the booking lands on the correct week
+      const dayIndex = schedule.weekDates.indexOf(fb.date);
+      if (dayIndex !== -1) {
+        friendBookingMap.set(`${dayIndex}-${fb.time}`, fb);
+      }
     }
   }
 

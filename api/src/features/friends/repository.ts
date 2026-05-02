@@ -505,6 +505,18 @@ export async function getAllFriendsBookings(
   }
 
   const result: FriendBooking[] = [];
+
+  // Compute Monday and Sunday for the requested weekOffset (matching riotinto client)
+  const targetDate = new Date();
+  targetDate.setHours(0, 0, 0, 0);
+  targetDate.setDate(targetDate.getDate() + weekOffset * 7);
+  const dow = targetDate.getDay();
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const weekMonday = new Date(targetDate);
+  weekMonday.setDate(targetDate.getDate() + mondayOffset);
+  const weekSunday = new Date(weekMonday);
+  weekSunday.setDate(weekMonday.getDate() + 6);
+
   for (const booking of bookings) {
     const friendUserId = accountMap.get(booking.riotintoAccountId);
     if (!friendUserId) continue;
@@ -512,25 +524,11 @@ export async function getAllFriendsBookings(
     const friend = friendProfileMap.get(friendUserId);
     if (!friend) continue;
 
-    if (weekOffset === 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const [dd, mm, yyyy] = booking.date.split("-").map(Number);
-      const bookingDate = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 0);
-      const diffDays = Math.floor(
-        (bookingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-      );
-      if (diffDays < 0 || diffDays > 6) continue;
-    } else if (weekOffset === 1) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const [dd, mm, yyyy] = booking.date.split("-").map(Number);
-      const bookingDate = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 0);
-      const diffDays = Math.floor(
-        (bookingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-      );
-      if (diffDays < 7 || diffDays > 13) continue;
-    }
+    const [dd, mm, yyyy] = booking.date.split("-").map(Number);
+    const bookingDate = new Date(yyyy ?? 0, (mm ?? 1) - 1, dd ?? 0);
+    bookingDate.setHours(0, 0, 0, 0);
+
+    if (bookingDate < weekMonday || bookingDate > weekSunday) continue;
 
     result.push({
       friendId: friendUserId,
