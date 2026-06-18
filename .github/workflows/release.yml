@@ -16,7 +16,7 @@ jobs:
       - name: Log in to registry
         uses: docker/login-action@v3
         with:
-          registry: registry.henriquesf.me
+          registry: harbor.henriquesf.me
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
@@ -26,8 +26,8 @@ jobs:
           context: ./api
           push: true
           tags: |
-            registry.henriquesf.me/rio-tinto-api:${{ github.sha }}
-            registry.henriquesf.me/rio-tinto-api:latest
+            harbor.henriquesf.me/tennis/tennis-api:${{ github.sha }}
+            harbor.henriquesf.me/tennis/tennis-api:latest
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
@@ -37,20 +37,5 @@ jobs:
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
           tags: |
-            registry.henriquesf.me/rio-tinto-frontend:${{ github.sha }}
-            registry.henriquesf.me/rio-tinto-frontend:latest
-      - name: Update NixOS Config
-        run: |
-          git config --global user.email "nix-bot@henriquesf.me"
-          git config --global user.name "NixOS Deployment Bot"
-
-          git clone https://x-access-token:${{ secrets.NIX_TOKEN }}@github.com/HenriqueSFernandes/dotfiles-server.git
-          cd dotfiles-server
-
-          sed -i 's|image = "registry.henriquesf.me/rio-tinto-frontend:.*";|image = "registry.henriquesf.me/rio-tinto-frontend:${{ github.sha }}";|' services/riotinto.nix
-          sed -i 's|image = "registry.henriquesf.me/rio-tinto-api:.*";|image = "registry.henriquesf.me/rio-tinto-api:${{ github.sha }}";|' services/riotinto.nix
-
-          git add .
-          git commit -m "deploy: update riotinto-tennis to ${{ github.sha }}"
-          git push
-
+            harbor.henriquesf.me/tennis/tennis-frontend:${{ github.sha }}
+            harbor.henriquesf.me/tenni/tennis-frontend:latest
