@@ -38,4 +38,4 @@ jobs:
             VITE_API_URL=${{ secrets.VITE_API_URL }}
           tags: |
             harbor.henriquesf.me/tennis/tennis-frontend:${{ github.sha }}
-            harbor.henriquesf.me/tenni/tennis-frontend:latest
+            harbor.henriquesf.me/tennis/tennis-frontend:latest
